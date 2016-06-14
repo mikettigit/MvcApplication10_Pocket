@@ -14,9 +14,15 @@ namespace MvcApplication10
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
-                name: "Home",
+                name: "Scripts",
                 url: "Home/Scripts/{*query}",
                 defaults: new { controller = "Home", action = "Scripts", query = UrlParameter.Optional }
+            );
+
+            routes.MapRoute(
+                name: "Styles",
+                url: "Home/Styles/{*query}",
+                defaults: new { controller = "Home", action = "Styles", query = UrlParameter.Optional }
             );
 
             routes.MapRoute(

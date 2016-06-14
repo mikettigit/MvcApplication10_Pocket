@@ -129,9 +129,9 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
+    <Content Include="Scripts\jquery-1.12.4_pocket.js" />
+    <Content Include="Scripts\jquery-ui_pocket.js" />
     <Content Include="Scripts\post.js" />
-    <Content Include="Scripts\_1_jquery.js" />
-    <Content Include="Scripts\_2_main.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -149,6 +149,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Sheets\_2_dialog.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Sheets\_1_main.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -1,12 +1,10 @@
-﻿var $ = jQuery.noConflict();
+﻿jQuery_pocket(document).ready(function () {
 
-$(document).ready(function () {
-
-    $("form").submit(function () {
+    jQuery_pocket("form").submit(function () {
 
         var form_data = new FormData(this);
 
-        $.ajax({
+        jQuery_pocket.ajax({
             url: "/Pocket/Index",
             data: form_data,
             cache: false,
@@ -19,12 +17,18 @@ $(document).ready(function () {
 
     });
 
-    $(document).ajaxSuccess(function (event, xhr, settings) {
+    if (jQuery) {
+        jQuery.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+            jqXHR.abort();
+            jQuery_pocket.ajax(originalOptions);
+            //убрать success от jQuery
+        })
+    }
+
+    jQuery_pocket(document).ajaxSuccess(function (event, xhr, settings) {
         data = JSON.parse(xhr.responseText);
         alert(data.Message);
     });
 
 });
-
-
 
