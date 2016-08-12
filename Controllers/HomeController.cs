@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Web;
 using System.Web.Mvc;
 
 namespace MvcApplication10.Controllers
@@ -13,12 +14,7 @@ namespace MvcApplication10.Controllers
             if (System.IO.File.Exists(path))
             {
                 FileStream filestream = new FileStream(path, FileMode.Open);
-
-                string ContentType = "*/*";
-                if (Request.AcceptTypes.Length > 0)
-                {
-                    ContentType = Request.AcceptTypes[0];
-                }
+                string ContentType = MimeMapping.GetMimeMapping(path);
                 return new FileStreamResult(filestream, ContentType);
             }
             else
@@ -41,6 +37,11 @@ namespace MvcApplication10.Controllers
             string ScriptsFolderPath = Server.MapPath("/Styles/");
             string path = ScriptsFolderPath + query.Replace('/', '\\');
             return Base(path);
+        }
+
+        public ActionResult Index()
+        {
+            return View();
         }
 
     }

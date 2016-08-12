@@ -9,32 +9,24 @@ namespace MvcApplication10.Models
 {
     public class EnhanceModel
     {
-        //public List<string> Styles;
-        //public List<string> Scripts;
+        private PocketModel parent;
+
         public List<string> Sheets;
 
-        public EnhanceModel(string serverpath)
+        public EnhanceModel(PocketModel _parent)
         {
-            //Styles = new List<string>();
-            //string[] stylefilepaths = Directory.GetFiles(serverpath + "styles\\");
-            //stylefilepaths.OrderBy(item => item);
-            //foreach (var stylefilepath in stylefilepaths)
-            //{
-            //    FileInfo fi = new FileInfo(stylefilepath);
-            //    Styles.Add("<link rel=\"stylesheet\" href=\"/Home/Styles/" + fi.Name + "\" type=\"text/css\" />");
-            //}
-
-            //Scripts = new List<string>();
-            //string[] scriptfilepaths = Directory.GetFiles(serverpath + "scripts\\");
-            //scriptfilepaths = scriptfilepaths.OrderBy(item => item).ToArray();
-            //foreach (var scriptfilepath in scriptfilepaths)
-            //{
-            //    FileInfo fi = new FileInfo(scriptfilepath);
-            //    Scripts.Add("<script src=\"/Home/Scripts/" + fi.Name + "\" type=\"text/javascript\"></script>");
-            //}
-
+            parent = _parent;
             Sheets = new List<string>();
-            string[] sheetfilepaths = Directory.GetFiles(serverpath + "sheets\\");
+            AddSheets(_parent.ServerFolderPath + "Sheets\\");
+            //if (parent.Id != Guid.Empty)
+            //{
+                AddSheets(_parent.ServerFolderPath + "Sheets\\ForTrials\\");
+            //}
+        }
+
+        private void AddSheets(string FolderPath)
+        {
+            string[] sheetfilepaths = Directory.GetFiles(FolderPath);
             sheetfilepaths.OrderBy(item => item);
             foreach (var sheetfilepath in sheetfilepaths)
             {
@@ -47,16 +39,6 @@ namespace MvcApplication10.Models
             string result = String.Copy(source);
 
             string enhanceString = "";
-
-            //foreach (string style in Styles)
-            //{
-            //    enhanceString += style;
-            //}
-
-            //foreach (string script in Scripts)
-            //{
-            //    enhanceString += script;
-            //}
 
             foreach (string sheet in Sheets)
             {

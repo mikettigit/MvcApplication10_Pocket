@@ -1,0 +1,23 @@
+﻿@{
+    ViewBag.Title = "Создание копии сайта";
+}
+
+<main class="masthead" id="top" role="main">
+    <div class="container">
+        <div class="row has-margin-top-lg">
+            <div class="col-lg-4 col-md-5 col-sm-12" style="width:100%;">
+                <div class="relative-block">
+                    <div class="signup-block">
+                        <h3 class="form-title has-margin-bottom-sm text-center">Создание копии сайта</h3>
+                        <form class="form" id="requestform">
+                            <div class="form-group text-center" style="margin-top:-20px;">Заполните данные</div>
+                            <div class="form-group"><label>Адрес сайта-образца (c http://)</label><input name="source" class="form-control input-lg" id="source" placeholder="http://" value=""></div>
+                            <div class="form-group last"><input class="btn btn-warning btn-block btn-lg wpcf7-submit" type="button" value="Просмотреть"></div>
+                            <p class="re-assure">Созданный сайт доступен в течение 3-х суток.</p>
+                        </form><span class="loading" id="result"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

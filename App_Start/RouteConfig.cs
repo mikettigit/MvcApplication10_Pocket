@@ -26,6 +26,24 @@ namespace MvcApplication10
             );
 
             routes.MapRoute(
+                name: "Index",
+                url: "Home/Index",
+                defaults: new { controller = "Home", action = "Index" }
+            );
+
+            routes.MapRoute(
+                name: "PocketInit",
+                url: "Pocket/Init",
+                defaults: new { controller = "Pocket", action = "Init" }
+            );
+
+            routes.MapRoute(
+                name: "PocketGetConfig",
+                url: "Pocket/GetConfig",
+                defaults: new { controller = "Pocket", action = "GetConfig" }
+            );
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{*query}",
                 defaults: new { controller = "Pocket", action = "Index" }

@@ -2,62 +2,176 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Web;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace MvcApplication10.Models
 {
     public class PocketModel
     {
-        private string serverpath;
-        private string serverhost;
-        
-        private string pocketpath;
+        private Guid id;
 
-        private string source;
+        private string serverdomainname;
+        private string serverfolderpath;
 
-        public string ServerHost
+        private string allpocketsfolderpath;
+
+        private string sourceurl;
+
+        private string messagefrom;
+        private string messageto;
+
+        public Guid Id
         {
             get {
-                return serverhost;
+                return id;
             }
         }
 
-        public string PocketPath
+        public string ServerDomainName
+        {
+            get {
+                return serverdomainname;
+            }
+        }
+
+        public string CurrentProjectLink
         {
             get
             {
-                return pocketpath;
+                return "http://" + ServerDomainName + "?source=" + HttpUtility.HtmlEncode(sourceurl) + "&id=" + id.ToString();
             }
         }
-
-        public bool CacheMode { 
+              
+        public bool CacheMode{ 
             get 
             {
-                return !String.IsNullOrEmpty(pocketpath);
+                return !String.IsNullOrEmpty(allpocketsfolderpath);
             } 
         }
 
-        private string ConfigFilePath {
+        public string MessageFrom
+        {
             get
             {
-                Uri uri = new Uri(source);
-                return pocketpath + uri.Host + "\\" + uri.Host + ".config";
+                return messagefrom;
+            }
+        }
+
+        public string MessageTo
+        {
+            get
+            {
+                return messageto;
+            }
+        }
+
+        public string ServerFolderPath
+        {
+            get
+            {
+                return serverfolderpath;
+            }
+        }
+
+        public string AllPocketsFolderPath
+        {
+            get
+            {
+                return allpocketsfolderpath;
+            }
+        }
+
+        public string CurrentPocketFolderPath
+        {
+            get
+            {
+                Uri uri = new Uri(sourceurl);
+                return AllPocketsFolderPath + uri.Host + (Id == Guid.Empty ? "" : "_" + Id.ToString()) + "\\";
+            }
+        }
+
+        public string ConfigFilePath
+        {
+            get
+            {
+                Uri uri = new Uri(sourceurl);
+                return CurrentPocketFolderPath + uri.Host + ".config";
+            }
+        }
+
+        private string LogFilePath
+        {
+            get
+            {
+                Uri uri = new Uri(sourceurl);
+                return CurrentPocketFolderPath + uri.Host + ".log";
             }
         } 
 
-        private ReplacementModel ReplacementModel;
+        public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(string _source, string _pocketpath, string _serverhost, string _serverpath)
+        public PocketModel(Guid _id, string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto)
         {
-            source = _source;
-            serverhost = _serverhost;
-            serverpath = _serverpath;
-            pocketpath = _pocketpath;
+            id = _id;
+            sourceurl = _sourceurl.TrimEnd('/');
+            serverdomainname = _serverdomainname;
+            serverfolderpath = _serverfolderpath;
+            allpocketsfolderpath = _allpocketsfolderpath;
 
-            ReplacementModel = new ReplacementModel(ConfigFilePath);
-            ReplacementModel.Items.Add(new Replacement(new Uri(source).Host, serverhost, ""));
+            messagefrom = _messagefrom;
+            messageto = _messageto;
+
+            XElement xConfiguration = null;
+            if (CacheMode)
+            {
+                if (File.Exists(ConfigFilePath))
+                {
+                    xConfiguration = XElement.Load(ConfigFilePath);
+                    XElement xNotifications = xConfiguration.Element(XName.Get("Notifications"));
+                    messagefrom = xNotifications.Element(XName.Get("MessageFrom")).Value;
+                    messageto = xNotifications.Element(XName.Get("MessageTo")).Value;
+                }
+                else
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(ConfigFilePath));
+                    xConfiguration = CreateEmptyConfigFile(id, messagefrom, messageto, ConfigFilePath);
+                }
+            }
+            ReplacementModel = new ReplacementModel(xConfiguration);
+            ReplacementModel.Items.Add(new Replacement(new Uri(sourceurl).Host, serverdomainname, "", true));
             
-            EnhanceModel = new EnhanceModel(serverpath);
+            EnhanceModel = new EnhanceModel(this);
+        }
+
+        private XElement CreateEmptyConfigFile(Guid _id, string _messagefrom, string _messageto, string _configfilepath)
+        {
+            XElement xConfiguration = new XElement("Configuration");
+                XAttribute xId = new XAttribute("id", _id.ToString());
+                xConfiguration.Add(xId);
+                XElement xNotifications = new XElement("Notifications");
+                    XElement XMessageFrom = new XElement("MessageFrom", _messagefrom);
+                xNotifications.Add(XMessageFrom);
+                    XElement XMessageTo = new XElement("MessageTo", _messageto);
+                xNotifications.Add(XMessageTo);
+            xConfiguration.Add(xNotifications);
+                XElement xReplacementModel = new XElement("ReplacementModel");
+                    XElement xReplacement = new XElement("Replacement");
+                        XAttribute xTarget = new XAttribute("target", "all");
+                        xReplacement.Add(xTarget);
+                        XElement xWhat = new XElement("what");
+                            xWhat.Add(new XCData(""));
+                        xReplacement.Add(xWhat);
+                        XElement xBy = new XElement("by");
+                            xBy.Add(new XCData(""));
+                        xReplacement.Add(xBy);
+                xReplacementModel.Add(xReplacement);
+            xConfiguration.Add(xReplacementModel);
+            xConfiguration.Save(_configfilepath);
+
+            return xConfiguration;
         }
 
         private HttpWebResponse GetResponse(Uri uri)
@@ -82,7 +196,7 @@ namespace MvcApplication10.Models
         {
             MemoryStream result = new MemoryStream();
 
-            Uri uri = new Uri(source + path);
+            Uri uri = new Uri(sourceurl + ReplacementModel.Repair(path));
 
             HttpWebResponse response = GetResponse(uri);
             if (response != null)
@@ -99,23 +213,19 @@ namespace MvcApplication10.Models
         {
             string result = "";
 
-            Uri uri = new Uri(source + path);
+            Uri uri = new Uri(sourceurl + path);
 
-            string SiteFolder = pocketpath + uri.Host;
-            result = SiteFolder + uri.PathAndQuery;
+            result = CurrentPocketFolderPath + uri.PathAndQuery;
             if (isContent)
             {
                 result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + uri.Host;
-                if (isHashed)
-                {
-                    result = result + "_" + ReplacementModel.Hash.ToString();
-                }
             }
             else {
-                if (uri.PathAndQuery.EndsWith("/"))
-                {
-                    result = result.Substring(0, result.Length - 1);
-                }
+                result = result.Trim('/');
+            }
+            if (isHashed)
+            {
+                result = result + "_" + ReplacementModel.Hash.ToString();
             }
             result = result.Replace('/', '\\');
             result = result.Replace('?', '&');
@@ -154,7 +264,7 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string GetContent(string path)
+        public string GetContent(string path, bool isJsOrCss)
         {
             string result = "";
 
@@ -165,11 +275,11 @@ namespace MvcApplication10.Models
 
             if (CacheMode)
             {
-                CurrentPocketFilePath = GetPocketFilePath(path, true, true);
+                CurrentPocketFilePath = GetPocketFilePath(path, !isJsOrCss, true);
                 MemoryStream = GetStreamFromPocket(CurrentPocketFilePath);
                 if (MemoryStream.Length == 0)
                 {
-                    GeneralPocketFilePath = GetPocketFilePath(path, true, false);
+                    GeneralPocketFilePath = GetPocketFilePath(path, !isJsOrCss, false);
                     MemoryStream = GetStreamFromPocket(GeneralPocketFilePath);
                     if (MemoryStream.Length != 0)
                     {
@@ -183,6 +293,14 @@ namespace MvcApplication10.Models
             {
                 MemoryStream = GetStreamFromResponse(path);
                 IsFromResponse = true;
+                if (CacheMode)
+                {
+                    try
+                    { 
+                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + "\r\n"); 
+                    }
+                    catch { }
+                }
             }
 
             StreamReader MemoryStreamReader = new StreamReader(MemoryStream);
@@ -190,7 +308,7 @@ namespace MvcApplication10.Models
 
             if (IsFromResponse || isFromGeneral)
             {
-                if (!isFromGeneral)
+                if (!isFromGeneral && !isJsOrCss)
                 {
                     result = EnhanceModel.Enhance(result);
                     if (CacheMode)
@@ -229,6 +347,14 @@ namespace MvcApplication10.Models
             {
                 MemoryStream = GetStreamFromResponse(path);
                 IsFromResponse = true;
+                if (CacheMode)
+                {
+                    try
+                    {
+                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + "\r\n");
+                    }
+                    catch { }
+                }
             }
 
             if (CacheMode && IsFromResponse)
@@ -238,5 +364,6 @@ namespace MvcApplication10.Models
 
             return MemoryStream;
         }
+  
     }
 }

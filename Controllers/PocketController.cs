@@ -1,12 +1,13 @@
 ﻿using MvcApplication10.Helpers;
 using MvcApplication10.Models;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 
@@ -17,8 +18,10 @@ namespace MvcApplication10.Controllers
         //
         // GET: /Pocket/
 
-        protected PocketModel Pocket { 
-            get {
+        protected PocketModel Pocket
+        {
+            get
+            {
                 PocketModel result = null;
 
                 SessionManager sm = new SessionManager();
@@ -30,42 +33,157 @@ namespace MvcApplication10.Controllers
                 }
                 else
                 {
-                    string serverpath = Server.MapPath("/");
-                    string source = ConfigurationManager.AppSettings["PocketSource"];
-                    string pocketpath = ConfigurationManager.AppSettings["PocketPath"];
-                    if (!String.IsNullOrEmpty(pocketpath)) 
+                    string SourceUrl = ConfigurationManager.AppSettings["PocketSource"];
+                    if (!String.IsNullOrEmpty(SourceUrl))
                     {
-                        pocketpath = serverpath + pocketpath;
-                    }
-                    string authority = Request.Url.Authority;
-                    result = new PocketModel(source, pocketpath, authority, serverpath);
+                        string ServerFolderPath = Server.MapPath("/");
+                        string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
+                        if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+                        {
+                            AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
+                        }
+                        string ServerDomainName = Request.Url.Authority;
+                        string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
+                        string messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
+                        result = new PocketModel(Guid.Empty, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
 
-                    sm.Set("pocketModel", result);
+                        sm.Set("pocketModel", result);
+                    }
                 }
 
                 return result;
-            } 
+            }
+        }
+
+        protected WordpressModel Wordpress
+        {
+            get
+            {
+                WordpressModel result = null;
+
+                SessionManager sm = new SessionManager();
+
+                object wordpressModel = sm.Get("wordpressModel");
+                if (wordpressModel != null)
+                {
+                    result = wordpressModel as WordpressModel;
+                }
+                else
+                {
+                    string WordpressURL = ConfigurationManager.AppSettings["WordpressURL"];
+                    if (!String.IsNullOrEmpty(WordpressURL))
+                    {
+                        result = new WordpressModel(WordpressURL);
+
+                        sm.Set("wordpressModel", result);
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult Init(FormCollection collection)
+        {
+            JsonMessage jm = new JsonMessage();
+
+            string SourceUrl = collection["source"];
+
+            Uri uriResult;
+            if (Uri.TryCreate(SourceUrl, UriKind.Absolute, out uriResult) && uriResult.Scheme == Uri.UriSchemeHttp)
+            {
+
+                PocketModel result = null;
+
+                SessionManager sm = new SessionManager();
+
+                Guid Id = Guid.NewGuid();
+
+                string ServerFolderPath = Server.MapPath("/");
+                string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
+                if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+                {
+                    AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
+                }
+                string ServerDomainName = Request.Url.Authority;
+                string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
+                string messageto = "";
+                result = new PocketModel(Id, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
+
+                sm.Set("pocketModel", result);
+
+                jm.Object = result.CurrentProjectLink;
+                jm.Result = true;
+            }
+            else
+            {
+                jm.Result = false;
+                jm.Message = "Адрес сайта-образца определeн как некорректный: " + SourceUrl;
+            }
+
+            return Json(jm);
         }
 
         [AcceptVerbs(HttpVerbs.Get)]
         public ActionResult Index()
         {
-            if ((Request.AcceptTypes.Length == 1 && Request.AcceptTypes[0] == "*/*")
-               || Request.AcceptTypes.Any(r => r.ToLower() == "text/html")
-               || Request.AcceptTypes.Any(r => r.ToLower() == "text/plain")
-               || Request.AcceptTypes.Any(r => r.ToLower() == "application/xhtml+xml")
-               || Request.AcceptTypes.Any(r => r.ToLower() == "application/xml")) 
+            string ContentType = MimeMapping.GetMimeMapping(Request.Path);
+            if (ContentType == "application/octet-stream" &&
+                ((Request.AcceptTypes.Length == 1 && Request.AcceptTypes[0] == "*/*")
+                        || Request.AcceptTypes.Any(r => r.ToLower() == "text/html")
+                        || Request.AcceptTypes.Any(r => r.ToLower() == "text/plain")
+                        || Request.AcceptTypes.Any(r => r.ToLower() == "application/xhtml+xml")
+                        || Request.AcceptTypes.Any(r => r.ToLower() == "application/xml")))
             {
-                string content = Pocket.GetContent(Request.RawUrl);
+                NameValueCollection qscoll = HttpUtility.ParseQueryString(HttpContext.Request.Url.Query);
+                if (qscoll.Count > 0)
+                {
+                    string source = qscoll["source"];
+                    string id = qscoll["id"];
+                    if (source != null && id != null)
+                    {
+                        if (Pocket == null || id.ToLower() != Pocket.Id.ToString().ToLower())
+                        {
+                            SessionManager sm = new SessionManager();
+
+                            string ServerFolderPath = Server.MapPath("/");
+                            string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
+                            if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+                            {
+                                AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
+                            }
+                            string ServerDomainName = Request.Url.Authority;
+                            PocketModel result = new PocketModel(new Guid(id), source, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, "", "");
+
+                            sm.Set("pocketModel", result);
+
+                            return Redirect("/");//плохое решение - лучше бы как-то удалять параметры
+                        }
+                    }
+                }
+                if (Pocket == null)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                string content = Pocket.GetContent(Request.RawUrl, false);
                 return Content(content);
+            }
+            else if (ContentType == "application/javascript" || ContentType == "text/css")
+            {
+                string content = "";
+                if (Pocket != null)
+                {
+                    content = Pocket.GetContent(Request.RawUrl, true);
+                }
+                return new FileContentResult(Encoding.UTF8.GetBytes(content), ContentType);
             }
             else
             {
-                Stream Stream = Pocket.GetSourceFileStream(Request.RawUrl);
-                string ContentType = "*/*";
-                if (Request.AcceptTypes.Length > 0)
+                Stream Stream = new MemoryStream();
+                if (Pocket != null)
                 {
-                    ContentType = Request.AcceptTypes[0];
+                    Stream = Pocket.GetSourceFileStream(Request.RawUrl);
                 }
                 return new FileStreamResult(Stream, ContentType);
             }
@@ -74,56 +192,77 @@ namespace MvcApplication10.Controllers
         [AcceptVerbs(HttpVerbs.Post)]
         public ActionResult Index(FormCollection collection)
         {
-            //чтение файлов
-
             JsonMessage jm = new JsonMessage();
-            
-            try
+
+            if (String.IsNullOrEmpty(collection["2fea14ff-d8e3-42c1-a230-3917b7a640c9"]))
             {
-                string subject = "Сообщение c сайта " + Pocket.ServerHost;
-                string body = "";
-                Collection<Attachment> attachments = new Collection<Attachment>();
-
-                string[] AllKeys = ((System.Collections.Specialized.NameValueCollection)(collection)).AllKeys;
-                foreach (var key in AllKeys)
-                {
-                    body += key + ": " + collection[key] + System.Environment.NewLine;
-                }
-
-                foreach (string OneFile in Request.Files)
-                {
-                    HttpPostedFileBase hpf = Request.Files[OneFile] as HttpPostedFileBase;
-                    if (hpf.ContentLength > 0)
-                    {
-                        Attachment attachment = new Attachment(hpf.InputStream, hpf.FileName);
-                        attachments.Add(attachment);
-                    }
-                }
-                
-                MailMessage mailObj = new MailMessage();
-                mailObj.From = new MailAddress(ConfigurationManager.AppSettings["messageFrom"]);
-                mailObj.To.Add(ConfigurationManager.AppSettings["messageTo"]);
-                mailObj.Subject = subject;
-                mailObj.Body = body;
-                foreach (var attachment in attachments)
-                {
-                    mailObj.Attachments.Add(attachment);
-                }
-
-                SmtpClient SMTPServer = new SmtpClient("localhost");
-                SMTPServer.Send(mailObj);
-
                 jm.Result = true;
-                jm.Message = "Данные отправлены, благодарим за сотрудничество...";
+                jm.Message = "Невозможно отправить данные - не обнаружен ключ формы";
             }
-            catch (Exception e)
+            else if (String.IsNullOrEmpty(Pocket.MessageFrom))
             {
                 jm.Result = true;
-                jm.Message = "Во время отправки произошла ошибка - " + e.ToString();
+                jm.Message = "Невозможно отправить данные - не настроен сервер отправки";
+            }
+            else if (String.IsNullOrEmpty(Pocket.MessageFrom))
+            {
+                jm.Result = true;
+                jm.Message = "Невозможно отправить данные - не задан получатель";
+            }
+            else
+            {
+                try
+                {
+                    string subject = "Notification " + Pocket.ServerDomainName;
+                    string body = "";
+                    Collection<Attachment> attachments = new Collection<Attachment>();
+
+                    string[] AllKeys = ((System.Collections.Specialized.NameValueCollection)(collection)).AllKeys;
+                    foreach (var key in AllKeys)
+                    {
+                        body += key + ": " + collection[key] + System.Environment.NewLine;
+                    }
+
+                    foreach (string OneFile in Request.Files)
+                    {
+                        HttpPostedFileBase hpf = Request.Files[OneFile] as HttpPostedFileBase;
+                        if (hpf.ContentLength > 0)
+                        {
+                            Attachment attachment = new Attachment(hpf.InputStream, hpf.FileName);
+                            attachments.Add(attachment);
+                        }
+                    }
+
+                    MailMessage mailObj = new MailMessage();
+                    mailObj.From = new MailAddress(Pocket.MessageFrom);
+                    mailObj.To.Add(Pocket.MessageTo);
+                    mailObj.Subject = subject;
+                    mailObj.Body = body;
+                    foreach (var attachment in attachments)
+                    {
+                        mailObj.Attachments.Add(attachment);
+                    }
+
+                    SmtpClient SMTPServer = new SmtpClient("localhost");
+                    SMTPServer.Send(mailObj);
+
+                    jm.Result = true;
+                    jm.Message = "Данные отправлены, благодарим за сотрудничество...";
+                }
+                catch (Exception e)
+                {
+                    jm.Result = true;
+                    jm.Message = "Во время отправки произошла ошибка - " + e.ToString();
+                }
             }
 
             return Json(jm);
         }
 
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult GetConfig()
+        {
+            return Json(Pocket.ReplacementModel.EditableItems);
+        }
     }
 }

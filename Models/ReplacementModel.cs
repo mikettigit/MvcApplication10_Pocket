@@ -13,12 +13,14 @@ namespace MvcApplication10.Models
         public string what;
         public string by;
         public string target;
+        public bool predefined;
 
-        public Replacement(string _what, string _by, string _target)
+        public Replacement(string _what, string _by, string _target, bool _predefined = false)
         {
             what = _what;
             by = _by;
             target = _target;
+            predefined = _predefined;
         }
     }
 
@@ -27,40 +29,58 @@ namespace MvcApplication10.Models
         public int Hash;
         public List<Replacement> Items;
 
-        public ReplacementModel(string configfilepath)
+        public IEnumerable<Replacement> EditableItems
+        {
+            get
+            {
+                return Items.Where(item => !item.predefined);
+            }
+        }
+
+        public ReplacementModel(XElement xConfiguration)
         {
             Items = new List<Replacement>();
-            if (File.Exists(configfilepath))
+            if (xConfiguration != null)
             {
-                XElement xDoc = XElement.Load(configfilepath);
-                XElement ReplacementModelNode = xDoc.Element(XName.Get("ReplacementModel"));
-                if (ReplacementModelNode != null)
+                XElement xReplacementModel = xConfiguration.Element(XName.Get("ReplacementModel"));
+                Hash = xReplacementModel.Value.GetHashCode();
+                IEnumerable<XElement> xReplacements = xReplacementModel.Elements(XName.Get("Replacement"));
+                foreach (XElement xReplacement in xReplacements)
                 {
-                    Hash = ReplacementModelNode.Value.GetHashCode();
-                    IEnumerable<XElement> Replacements = ReplacementModelNode.Elements(XName.Get("Replacement"));
-                    foreach (XElement xReplacement in Replacements)
-                    {
-                        string what = xReplacement.Element(XName.Get("what")).Value;
-                        string by = xReplacement.Element(XName.Get("by")).Value;
-                        string target = xReplacement.Attribute(XName.Get("target")).Value;
-                        Items.Add(new Replacement(what, by, target));
-                    }
+                    string what = xReplacement.Element(XName.Get("what")).Value;
+                    string by = xReplacement.Element(XName.Get("by")).Value;
+                    string target = xReplacement.Attribute(XName.Get("target")).Value;
+                    Items.Add(new Replacement(what, by, target));
                 }
             }
         }
 
         public string Replace(string source)
         {
-           string result = String.Copy(source);
+            return Replacement(source, true);
+        }
 
-           foreach (Replacement item in Items) {
-               string CurrentWhat = Regex.Escape(item.what);
-               CurrentWhat = CurrentWhat.Replace("\\r\\n","");
-               var regex = new Regex(CurrentWhat, RegexOptions.IgnoreCase);
-               result = regex.Replace(result.Replace("\r\n","\n"), item.by);
-           }
+        public string Repair(string source)
+        {
+            return Replacement(source, false);
+        }
 
-           return result;
+        private string Replacement(string source, bool forward)
+        {
+            string result = String.Copy(source);
+
+            foreach (Replacement item in Items)
+            {
+                if (!String.IsNullOrEmpty(forward ? item.what : item.by))
+                {
+                    string CurrentWhat = Regex.Escape(forward ? item.what : item.by);
+                    CurrentWhat = CurrentWhat.Replace("\\r\\n", "");
+                    var regex = new Regex(CurrentWhat);
+                    result = regex.Replace(result.Replace("\r\n", "\n"), forward ? item.by : item.what);
+                }
+            }
+
+            return result;
         }
     }
 }
