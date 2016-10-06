@@ -121,7 +121,6 @@
     </Compile>
     <Compile Include="Helpers\JsonMessage.cs" />
     <Compile Include="Helpers\SessionManager.cs" />
-    <Compile Include="Models\WordpressModel.cs" />
     <Compile Include="Models\EnhanceModel.cs" />
     <Compile Include="Models\PocketModel.cs" />
     <Compile Include="Models\ReplacementModel.cs" />
@@ -154,7 +153,7 @@
     <Content Include="_документация\Описание.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
+    <Folder Include="App_Data\Pocket\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

@@ -27,22 +27,25 @@
             jqXHR.abort();
 
             isForm = false;
-            for (var key in originalOptions.data) {
-                if (typeof originalOptions.data[key] == "string") {
-                    jQuery.each(jQuery("input,textarea"), function () {
-                        if (jQuery(this).val() == originalOptions.data[key]) {
-                            isForm = true;
-                            return false;
-                        }
-                    });
-                }
-                if (isForm) {
-                    break;
+            if (typeof originalOptions.data != "string") {
+                for (var key in originalOptions.data) {
+                    if (typeof originalOptions.data[key] == "string") {
+                        jQuery.each(jQuery("input,textarea"), function () {
+                            if (jQuery(this).val() == originalOptions.data[key]) {
+                                isForm = true;
+                                return false;
+                            }
+                        });
+                    }
+                    if (isForm) {
+                        break;
+                    }
                 }
             }
 
             if (isForm) {
                 $.extend(originalOptions.data, { "2fea14ff-d8e3-42c1-a230-3917b7a640c9": "2fea14ff-d8e3-42c1-a230-3917b7a640c9" });
+                originalOptions["type"] = "POST";
                 jQuery_pocket.ajax(originalOptions);
             }
 
@@ -57,4 +60,3 @@
     });
 
 });
-

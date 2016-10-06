@@ -1,0 +1,13 @@
+﻿<script type="text/javascript">
+
+    jQuery_pocket(document).ready(function () {
+
+        jQuery_pocket(document).ajaxSuccess(function (event, xhr, settings) {
+            if (settings.url.toLowerCase() != "/pocket/getconfig") {
+                $('[id^="wait_comp_"]').hide();
+            }
+        });
+
+    });
+
+</script>

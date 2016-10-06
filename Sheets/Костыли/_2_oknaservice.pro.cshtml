@@ -1,0 +1,86 @@
+﻿<script type="text/javascript">
+
+    jQuery_pocket(document).ready(function () {
+
+        jQuery_pocket(document).ajaxSuccess(function (event, xhr, settings) {
+            if (settings.url.toLowerCase() != "/pocket/getconfig") {
+                $('[id^="cme_cls"]:visible').click();
+            }
+        });
+
+    });
+
+
+    $("<style>")
+        .prop("type", "text/css")
+        .html(".error {border: 1px solid #eb4848 !important; box-shadow: 0 0 10px #f00 !important;}")
+        .appendTo("head");
+
+    $.fn.bindFirst = function (name, fn) {
+        var elem, handlers, i, _len;
+        this.bind(name, fn);
+        for (i = 0, _len = this.length; i < _len; i++) {
+            elem = this[i];
+            handlers = jQuery._data(elem).events[name.split('.')[0]];
+            handlers.unshift(handlers.pop());
+        }
+    };
+    $(document).ready(function () {
+
+        $("#callmeform, #callmeform-gager").find("input[type='button']").bindFirst("click", function (event) {
+
+            isError = false;
+
+            phoneField = $(this).parents("#callmeform, #callmeform-gager").find("#cphone, #cphone-gager");
+            phoneField.removeClass("error");
+
+            phoneChars = " +-()1234567890";
+            phoneString = phoneField.val();
+            if (phoneString.length < 10) {
+                phoneField.addClass("error");
+                isError = true;
+            }
+            else {
+                i = 0;
+                while (ch = phoneString.substr(i, 1)) {
+                    if (phoneChars.indexOf(ch) == -1) {
+                        phoneField.addClass("error");
+                        isErrorPhone = true;
+                        break;
+                    }
+                    i++;
+                }
+            }
+
+            if (isError) {
+                alert("Пожалуйста, заполните обязательные поля корректно.");
+                throw new ReferenceError("Некорректное заполнение");
+                return false;
+            }
+
+        })
+
+        $("#callmeform-director").find("input[type='button']").bindFirst("click", function (event) {
+
+            isError = false;
+
+            messageField = $(this).parents("#callmeform-director").find("#ccmnt-director");
+            messageField.removeClass("error");
+
+            messageString = messageField.val();
+            if (messageString.length < 10) {
+                messageField.addClass("error");
+                isError = true;
+            }
+
+            if (isError) {
+                alert("Пожалуйста, заполните обязательные поля корректно.");
+                throw new ReferenceError("Некорректное заполнение");
+                return false;
+            }
+
+        })
+
+    })
+
+</script>

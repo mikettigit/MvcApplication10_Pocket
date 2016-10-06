@@ -18,10 +18,10 @@ namespace MvcApplication10.Models
             parent = _parent;
             Sheets = new List<string>();
             AddSheets(_parent.ServerFolderPath + "Sheets\\");
-            //if (parent.Id != Guid.Empty)
-            //{
+            if (parent.Id != Guid.Empty)
+            {
                 AddSheets(_parent.ServerFolderPath + "Sheets\\ForTrials\\");
-            //}
+            }
         }
 
         private void AddSheets(string FolderPath)

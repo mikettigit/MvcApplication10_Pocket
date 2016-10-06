@@ -2,9 +2,11 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Xml;
 using System.Xml.Linq;
+using System.Linq;
 
 namespace MvcApplication10.Models
 {
@@ -253,7 +255,17 @@ namespace MvcApplication10.Models
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
+    
+                DirectoryInfo dInfo = Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+                var SearchPattern = new Regex(@"^(" + Path.GetFileName(path).Replace(ReplacementModel.Hash.ToString(), "") + @")(?!.*?\.(config|log)$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                var filenames = dInfo.GetFiles().Where(f => SearchPattern.IsMatch(f.Name));
+                foreach (var filename in filenames)
+                {
+                    filename.Delete();
+                }
+
                 using (var FileStream = new FileStream(path, FileMode.Create))
                 {
                     MemoryStream.CopyTo(FileStream);

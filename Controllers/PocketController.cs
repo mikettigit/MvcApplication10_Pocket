@@ -55,34 +55,6 @@ namespace MvcApplication10.Controllers
             }
         }
 
-        protected WordpressModel Wordpress
-        {
-            get
-            {
-                WordpressModel result = null;
-
-                SessionManager sm = new SessionManager();
-
-                object wordpressModel = sm.Get("wordpressModel");
-                if (wordpressModel != null)
-                {
-                    result = wordpressModel as WordpressModel;
-                }
-                else
-                {
-                    string WordpressURL = ConfigurationManager.AppSettings["WordpressURL"];
-                    if (!String.IsNullOrEmpty(WordpressURL))
-                    {
-                        result = new WordpressModel(WordpressURL);
-
-                        sm.Set("wordpressModel", result);
-                    }
-                }
-
-                return result;
-            }
-        }
-
         [AcceptVerbs(HttpVerbs.Post)]
         public ActionResult Init(FormCollection collection)
         {
@@ -128,8 +100,10 @@ namespace MvcApplication10.Controllers
         [AcceptVerbs(HttpVerbs.Get)]
         public ActionResult Index()
         {
-            string ContentType = MimeMapping.GetMimeMapping(Request.Path);
-            if (ContentType == "application/octet-stream" &&
+            string ContentType = MimeMapping.GetMimeMapping(Request.Path).ToLower();
+            if ((ContentType == "application/octet-stream"
+                    || ContentType == "text/html")
+                &&
                 ((Request.AcceptTypes.Length == 1 && Request.AcceptTypes[0] == "*/*")
                         || Request.AcceptTypes.Any(r => r.ToLower() == "text/html")
                         || Request.AcceptTypes.Any(r => r.ToLower() == "text/plain")
