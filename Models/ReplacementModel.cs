@@ -57,26 +57,26 @@ namespace MvcApplication10.Models
 
         public string Replace(string source)
         {
-            return Replacement(source, true);
+            return Replacement(source, false);
         }
 
         public string Repair(string source)
         {
-            return Replacement(source, false);
+            return Replacement(source, true);
         }
 
-        private string Replacement(string source, bool forward)
+        private string Replacement(string source, bool repair)
         {
             string result = String.Copy(source);
 
             foreach (Replacement item in Items)
             {
-                if (!String.IsNullOrEmpty(forward ? item.what : item.by))
+                if (!String.IsNullOrEmpty(repair ? item.by : item.what))
                 {
-                    string CurrentWhat = Regex.Escape(forward ? item.what : item.by);
+                    string CurrentWhat = Regex.Escape(repair ? item.by : item.what);
                     CurrentWhat = CurrentWhat.Replace("\\r\\n", "");
                     var regex = new Regex(CurrentWhat);
-                    result = regex.Replace(result.Replace("\r\n", "\n"), forward ? item.by : item.what);
+                    result = regex.Replace(result.Replace("\r\n", "\n"), repair ? item.what : item.by);
                 }
             }
 
