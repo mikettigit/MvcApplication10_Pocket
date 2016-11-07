@@ -24,6 +24,8 @@ namespace MvcApplication10.Models
         private string messagefrom;
         private string messageto;
 
+        private bool locked;
+
         public Guid Id
         {
             get {
@@ -115,7 +117,7 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(Guid _id, string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto)
+        public PocketModel(Guid _id, string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto, bool _locked = false)
         {
             id = _id;
             sourceurl = _sourceurl.TrimEnd('/');
@@ -125,6 +127,7 @@ namespace MvcApplication10.Models
 
             messagefrom = _messagefrom;
             messageto = _messageto;
+            locked = _locked;
 
             XElement xConfiguration = null;
             if (CacheMode)
@@ -135,11 +138,16 @@ namespace MvcApplication10.Models
                     XElement xNotifications = xConfiguration.Element(XName.Get("Notifications"));
                     messagefrom = xNotifications.Element(XName.Get("MessageFrom")).Value;
                     messageto = xNotifications.Element(XName.Get("MessageTo")).Value;
+                    XElement xLocked = xConfiguration.Element(XName.Get("Locked"));
+                    if (xLocked != null)
+                    {
+                        locked = Convert.ToBoolean(xLocked.Value);
+                    }
                 }
                 else
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(ConfigFilePath));
-                    xConfiguration = CreateEmptyConfigFile(id, messagefrom, messageto, ConfigFilePath);
+                    xConfiguration = CreateEmptyConfigFile(id, messagefrom, messageto, ConfigFilePath, locked);
                 }
             }
             ReplacementModel = new ReplacementModel(xConfiguration);
@@ -148,7 +156,7 @@ namespace MvcApplication10.Models
             EnhanceModel = new EnhanceModel(this);
         }
 
-        private XElement CreateEmptyConfigFile(Guid _id, string _messagefrom, string _messageto, string _configfilepath)
+        private XElement CreateEmptyConfigFile(Guid _id, string _messagefrom, string _messageto, string _configfilepath, bool _locked = false)
         {
             XElement xConfiguration = new XElement("Configuration");
                 XAttribute xId = new XAttribute("id", _id.ToString());
@@ -158,6 +166,8 @@ namespace MvcApplication10.Models
                 xNotifications.Add(XMessageFrom);
                     XElement XMessageTo = new XElement("MessageTo", _messageto);
                 xNotifications.Add(XMessageTo);
+                XElement XLocked = new XElement("Locked", _locked.ToString());
+                xConfiguration.Add(XLocked);
             xConfiguration.Add(xNotifications);
                 XElement xReplacementModel = new XElement("ReplacementModel");
                     XElement xReplacement = new XElement("Replacement");
@@ -276,8 +286,9 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string GetContent(string path, bool isJsOrCss)
+        public string GetContent(Uri url, bool isJsOrCss)
         {
+            string path = String.Format("{0}{1}", url.AbsolutePath, url.Query);
             string result = "";
 
             MemoryStream MemoryStream = new MemoryStream();
@@ -303,13 +314,24 @@ namespace MvcApplication10.Models
             bool IsFromResponse = false;
             if (MemoryStream.Length == 0)
             {
-                MemoryStream = GetStreamFromResponse(path);
+                if (!locked)
+                {
+                    MemoryStream = GetStreamFromResponse(path);
+                }
+                else
+                {
+                    if (!String.IsNullOrEmpty(url.Query))
+                    {
+                        Uri NonQueryUrl = new Uri(String.Format("{0}{1}{2}{3}", url.Scheme, Uri.SchemeDelimiter, url.Authority, url.AbsolutePath));
+                        return GetContent(NonQueryUrl, isJsOrCss);
+                    }
+                }
                 IsFromResponse = true;
                 if (CacheMode)
                 {
                     try
-                    { 
-                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + "\r\n"); 
+                    {
+                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : "") + "\r\n"); 
                     }
                     catch { }
                 }
@@ -343,8 +365,10 @@ namespace MvcApplication10.Models
             return result;
         }
 
-        public MemoryStream GetSourceFileStream(string path)
+        public MemoryStream GetSourceFileStream(Uri url)
         {
+            string path = String.Format("{0}{1}", url.AbsolutePath, url.Query);
+
             MemoryStream MemoryStream = new MemoryStream();
             string CurrentPocketFilePath = "";
 
@@ -357,13 +381,24 @@ namespace MvcApplication10.Models
             bool IsFromResponse = false;
             if (MemoryStream.Length == 0)
             {
-                MemoryStream = GetStreamFromResponse(path);
+                if (!locked)
+                {
+                    MemoryStream = GetStreamFromResponse(path);
+                }
+                else
+                {
+                    if (!String.IsNullOrEmpty(url.Query))
+                    {
+                        Uri NonQueryUrl = new Uri(String.Format("{0}{1}{2}{3}", url.Scheme, Uri.SchemeDelimiter, url.Authority, url.AbsolutePath));
+                        return GetSourceFileStream(NonQueryUrl);
+                    }
+                }
                 IsFromResponse = true;
                 if (CacheMode)
                 {
                     try
                     {
-                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + "\r\n");
+                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : "") + "\r\n");
                     }
                     catch { }
                 }

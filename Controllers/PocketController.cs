@@ -140,7 +140,7 @@ namespace MvcApplication10.Controllers
                 {
                     return RedirectToAction("Index", "Home");
                 }
-                string content = Pocket.GetContent(Request.RawUrl, false);
+                string content = Pocket.GetContent(Request.Url, false);
                 return Content(content);
             }
             else if (ContentType == "application/javascript" || ContentType == "text/css")
@@ -148,7 +148,7 @@ namespace MvcApplication10.Controllers
                 string content = "";
                 if (Pocket != null)
                 {
-                    content = Pocket.GetContent(Request.RawUrl, true);
+                    content = Pocket.GetContent(Request.Url, true);
                 }
                 return new FileContentResult(Encoding.UTF8.GetBytes(content), ContentType);
             }
@@ -157,7 +157,7 @@ namespace MvcApplication10.Controllers
                 Stream Stream = new MemoryStream();
                 if (Pocket != null)
                 {
-                    Stream = Pocket.GetSourceFileStream(Request.RawUrl);
+                    Stream = Pocket.GetSourceFileStream(Request.Url);
                 }
                 return new FileStreamResult(Stream, ContentType);
             }

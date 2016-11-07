@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -74,13 +75,54 @@ namespace MvcApplication10.Models
                 if (!String.IsNullOrEmpty(repair ? item.by : item.what))
                 {
                     string CurrentWhat = Regex.Escape(repair ? item.by : item.what);
-                    CurrentWhat = CurrentWhat.Replace("\\r\\n", "");
-                    var regex = new Regex(CurrentWhat);
-                    result = regex.Replace(result.Replace("\r\n", "\n"), repair ? item.what : item.by);
+
+                    List<string> CurrentWhats = new List<string>();
+
+                    if (item.target.ToLower() == "UpToClosingTag".ToLower())
+                    {
+                       try
+                       {
+                           HtmlDocument doc = new HtmlDocument();
+                           doc.LoadHtml(result);
+                           RecurseFindNodeTextsByOuterHtml(CurrentWhats, doc.DocumentNode, CurrentWhat);
+                       }
+                       finally
+                       {
+                       }
+                    }
+
+                    if (CurrentWhats.Count == 0)
+                    {
+                        CurrentWhats.Add(CurrentWhat);
+                    }
+
+                    foreach (var CurrentWhatsIterator in CurrentWhats)
+                    {
+                        CurrentWhat = CurrentWhatsIterator.Replace("\\r\\n", "");
+                        var regex = new Regex(CurrentWhat);
+                        result = regex.Replace(result.Replace("\r\n", "\n"), repair ? item.what : item.by);
+                    }
+
                 }
             }
 
             return result;
+        }
+
+        private void RecurseFindNodeTextsByOuterHtml(List<string> FindedTexts, HtmlNode Node, string what)
+        {
+            IEnumerable<HtmlNode> ChildElements = Node.ChildNodes.Where(node => node.NodeType == HtmlNodeType.Element);
+            foreach (var n in ChildElements)
+            {
+                if (n.OuterHtml.Contains(what))
+                {
+                    if (!n.InnerHtml.Contains(what))
+                    {
+                        FindedTexts.Add(n.OuterHtml);
+                    }
+                    RecurseFindNodeTextsByOuterHtml(FindedTexts, n, what);
+                }
+            }
         }
     }
 }
