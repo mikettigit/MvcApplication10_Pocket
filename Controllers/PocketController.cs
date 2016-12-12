@@ -1,6 +1,7 @@
 ﻿using MvcApplication10.Helpers;
 using MvcApplication10.Models;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Configuration;
@@ -55,46 +56,47 @@ namespace MvcApplication10.Controllers
             }
         }
 
-        [AcceptVerbs(HttpVerbs.Post)]
-        public ActionResult Init(FormCollection collection)
+        protected Dictionary<string, string> SharedControls
         {
-            JsonMessage jm = new JsonMessage();
-
-            string SourceUrl = collection["source"];
-
-            Uri uriResult;
-            if (Uri.TryCreate(SourceUrl, UriKind.Absolute, out uriResult) && uriResult.Scheme == Uri.UriSchemeHttp)
+            get 
             {
-
-                PocketModel result = null;
+                 Dictionary<string, string> result = new  Dictionary<string, string>();
 
                 SessionManager sm = new SessionManager();
 
-                Guid Id = Guid.NewGuid();
-
-                string ServerFolderPath = Server.MapPath("/");
-                string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-                if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+                object sharedControls = sm.Get("sharedControls");
+                if (sharedControls != null)
                 {
-                    AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
+                    result = sharedControls as Dictionary<string, string>;
                 }
-                string ServerDomainName = Request.Url.Authority;
-                string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
-                string messageto = "";
-                result = new PocketModel(Id, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
+                else
+                {
+                    string RelativeControlsPath = "/Views/Shared/Controls/";
+                    string ControlsPath = Server.MapPath("") + RelativeControlsPath;
+                    string[] Files = Directory.GetFiles(ControlsPath);
+                    foreach (var File in Files)
+                    {
+                        string ControlName = Path.GetFileName(File);
+                        result.Add(ControlName, "~" + RelativeControlsPath + ControlName);
+                    }
+                    sm.Set("sharedControls", result);
+                }
 
-                sm.Set("pocketModel", result);
-
-                jm.Object = result.CurrentProjectLink;
-                jm.Result = true;
+                return result;
             }
-            else
+        }
+
+        private string RenderRazorViewToString(string viewName, object model)
+        {
+            ViewData.Model = model;
+            using (var sw = new StringWriter())
             {
-                jm.Result = false;
-                jm.Message = "Адрес сайта-образца определeн как некорректный: " + SourceUrl;
+                var viewResult = ViewEngines.Engines.FindPartialView(ControllerContext, viewName);
+                var viewContext = new ViewContext(ControllerContext, viewResult.View, ViewData, TempData, sw);
+                viewResult.View.Render(viewContext, sw);
+                viewResult.ViewEngine.ReleaseView(ControllerContext, viewResult.View);
+                return sw.GetStringBuilder().ToString();
             }
-
-            return Json(jm);
         }
 
         [AcceptVerbs(HttpVerbs.Get)]
@@ -140,7 +142,15 @@ namespace MvcApplication10.Controllers
                 {
                     return RedirectToAction("Index", "Home");
                 }
+
                 string content = Pocket.GetContent(Request.Url, false);
+
+                foreach (var ControlName in SharedControls)
+                {
+                    string template = RenderRazorViewToString(ControlName.Value, "");
+                    content = content.Replace("@" + ControlName.Key, template);
+                }
+
                 return Content(content);
             }
             else if (ContentType == "application/javascript" || ContentType == "text/css")
@@ -228,6 +238,48 @@ namespace MvcApplication10.Controllers
                     jm.Result = true;
                     jm.Message = "Во время отправки произошла ошибка - " + e.ToString();
                 }
+            }
+
+            return Json(jm);
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult Init(FormCollection collection)
+        {
+            JsonMessage jm = new JsonMessage();
+
+            string SourceUrl = collection["source"];
+
+            Uri uriResult;
+            if (Uri.TryCreate(SourceUrl, UriKind.Absolute, out uriResult) && uriResult.Scheme == Uri.UriSchemeHttp)
+            {
+
+                PocketModel result = null;
+
+                SessionManager sm = new SessionManager();
+
+                Guid Id = Guid.NewGuid();
+
+                string ServerFolderPath = Server.MapPath("/");
+                string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
+                if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+                {
+                    AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
+                }
+                string ServerDomainName = Request.Url.Authority;
+                string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
+                string messageto = "";
+                result = new PocketModel(Id, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
+
+                sm.Set("pocketModel", result);
+
+                jm.Object = result.CurrentProjectLink;
+                jm.Result = true;
+            }
+            else
+            {
+                jm.Result = false;
+                jm.Message = "Адрес сайта-образца определeн как некорректный: " + SourceUrl;
             }
 
             return Json(jm);
