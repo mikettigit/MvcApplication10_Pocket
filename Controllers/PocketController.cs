@@ -72,7 +72,7 @@ namespace MvcApplication10.Controllers
                 else
                 {
                     string RelativeControlsPath = "/Views/Shared/Controls/";
-                    string ControlsPath = Server.MapPath("") + RelativeControlsPath;
+                    string ControlsPath = Server.MapPath("/") + RelativeControlsPath;
                     string[] Files = Directory.GetFiles(ControlsPath);
                     foreach (var File in Files)
                     {
