@@ -1,0 +1,25 @@
+﻿@{
+    string model = ViewData.Model as string;
+    string RelativeControlsPath = "/Otsyv/";
+    string ControlsPath = Server.MapPath("/") + RelativeControlsPath;
+    FileInfo[] Files = new DirectoryInfo(ControlsPath).GetFiles();
+    var sortedFiles = Files.OrderByDescending(f => f.LastWriteTime).ToList();
+
+
+    foreach (var File in sortedFiles)
+    {
+        string ControlName = Path.GetFileNameWithoutExtension(((System.IO.FileSystemInfo)(File)).FullName);
+
+        <div class="even" id="comment-item-24">
+            <div class="rbox">
+                <div class="comment-box">
+                    <span class="comment-author">@ControlName</span>
+                    <span class="comment-date">@(((System.IO.FileSystemInfo)(File)).LastWriteTime.ToString())</span>
+                    <div class="comment-body" id="comment-body-24">@System.IO.File.ReadAllText(((System.IO.FileSystemInfo)(File)).FullName)</div>
+                </div>
+                <div class="clear">
+                </div>
+            </div>
+        </div>
+    }
+}
