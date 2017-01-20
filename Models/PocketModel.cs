@@ -292,21 +292,21 @@ namespace MvcApplication10.Models
             string result = "";
 
             MemoryStream MemoryStream = new MemoryStream();
-            string CurrentPocketFilePath = "";
-            string GeneralPocketFilePath = "";
-            bool isFromGeneral = false;
+            string InstanceFilepath = "";
+            string SampleFilepath = "";
+            bool isFromSample = false;
 
             if (CacheMode)
             {
-                CurrentPocketFilePath = GetPocketFilePath(path, !isJsOrCss, true);
-                MemoryStream = GetStreamFromPocket(CurrentPocketFilePath);
+                InstanceFilepath = GetPocketFilePath(path, !isJsOrCss, true);
+                MemoryStream = GetStreamFromPocket(InstanceFilepath);
                 if (MemoryStream.Length == 0)
                 {
-                    GeneralPocketFilePath = GetPocketFilePath(path, !isJsOrCss, false);
-                    MemoryStream = GetStreamFromPocket(GeneralPocketFilePath);
+                    SampleFilepath = GetPocketFilePath(path, !isJsOrCss, false);
+                    MemoryStream = GetStreamFromPocket(SampleFilepath);
                     if (MemoryStream.Length != 0)
                     {
-                        isFromGeneral = true;
+                        isFromSample = true;
                     }
                 }
             }
@@ -340,15 +340,15 @@ namespace MvcApplication10.Models
             StreamReader MemoryStreamReader = new StreamReader(MemoryStream);
             result = MemoryStreamReader.ReadToEnd();
 
-            if (IsFromResponse || isFromGeneral)
+            if (IsFromResponse || isFromSample)
             {
-                if (!isFromGeneral && !isJsOrCss)
+                if (!isFromSample && !isJsOrCss)
                 {
                     result = EnhanceModel.Enhance(result);
                     if (CacheMode)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
-                        SetStreamToPocket(new MemoryStream(byteArray), GeneralPocketFilePath);
+                        SetStreamToPocket(new MemoryStream(byteArray), SampleFilepath);
                     }
                 }
 
@@ -357,7 +357,7 @@ namespace MvcApplication10.Models
                     if (CacheMode)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
-                        SetStreamToPocket(new MemoryStream(byteArray), CurrentPocketFilePath);
+                        SetStreamToPocket(new MemoryStream(byteArray), InstanceFilepath);
                     }
                 }
             }
@@ -370,12 +370,12 @@ namespace MvcApplication10.Models
             string path = String.Format("{0}{1}", url.AbsolutePath, url.Query);
 
             MemoryStream MemoryStream = new MemoryStream();
-            string CurrentPocketFilePath = "";
+            string InstanceFilepath = "";
 
             if (CacheMode)
             {
-                CurrentPocketFilePath = GetPocketFilePath(path, false, false);
-                MemoryStream = GetStreamFromPocket(CurrentPocketFilePath);
+                InstanceFilepath = GetPocketFilePath(path, false, false);
+                MemoryStream = GetStreamFromPocket(InstanceFilepath);
             }
 
             bool IsFromResponse = false;
@@ -406,7 +406,7 @@ namespace MvcApplication10.Models
 
             if (CacheMode && IsFromResponse)
             {
-                SetStreamToPocket(MemoryStream, CurrentPocketFilePath);
+                SetStreamToPocket(MemoryStream, InstanceFilepath);
             }
 
             return MemoryStream;
