@@ -354,7 +354,7 @@ namespace MvcApplication10.Models
                     }
                 }
 
-                if (ReplacementModel.Hash != 0) {
+                if (!String.IsNullOrWhiteSpace(ReplacementModel.Hash)) {
                     result = ReplacementModel.Replace(result);
                     if (CacheMode)
                     {

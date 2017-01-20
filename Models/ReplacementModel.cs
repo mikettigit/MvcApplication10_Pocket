@@ -27,7 +27,7 @@ namespace MvcApplication10.Models
 
     public class ReplacementModel
     {
-        public int Hash;
+        public string Hash;
         public List<Replacement> Items;
 
         public IEnumerable<Replacement> EditableItems
@@ -44,7 +44,7 @@ namespace MvcApplication10.Models
             if (xConfiguration != null)
             {
                 XElement xReplacementModel = xConfiguration.Element(XName.Get("ReplacementModel"));
-                Hash = xReplacementModel.Value.GetHashCode();
+                Hash = xReplacementModel.Value.GetHashCode().ToString() + "_" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
                 IEnumerable<XElement> xReplacements = xReplacementModel.Elements(XName.Get("Replacement"));
                 foreach (XElement xReplacement in xReplacements)
                 {
