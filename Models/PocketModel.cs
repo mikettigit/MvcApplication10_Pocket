@@ -342,9 +342,11 @@ namespace MvcApplication10.Models
 
             if (IsFromResponse || isFromSample)
             {
-                if (!isFromSample && !isJsOrCss)
+                if (!isFromSample)
                 {
-                    result = EnhanceModel.Enhance(result);
+                    if (!isJsOrCss) { 
+                        result = EnhanceModel.Enhance(result);
+                    }
                     if (CacheMode)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
