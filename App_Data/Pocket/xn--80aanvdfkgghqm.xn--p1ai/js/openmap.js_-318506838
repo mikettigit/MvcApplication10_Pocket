@@ -1,7 +1,0 @@
-function anichange (objName) {
- if ( $(objName).css('display') == 'none' ) {
- $(objName).animate({height: 'show'}, 1000);
- } else {
- $(objName).animate({height: 'hide'}, 2000);
- }
-}

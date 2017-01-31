@@ -1,4 +1,0 @@
-var user = {};
-var imagePath = '/picture/photo';
-var staticContent = '/sites/all/static';
-var sharedCartUrls = [{url: 'https://collection.sprox.com/', siteCode: 'SPROX'} ,{url: 'https://collection.leomilgroup.com/', siteCode: 'LEOMIL'}];
