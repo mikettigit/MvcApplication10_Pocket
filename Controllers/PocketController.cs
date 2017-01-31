@@ -35,7 +35,7 @@ namespace MvcApplication10.Controllers
                 else
                 {
                     string SourceUrl = ConfigurationManager.AppSettings["PocketSource"];
-                    if (!String.IsNullOrEmpty(SourceUrl))
+                    if (!String.IsNullOrEmpty(SourceUrl) && Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
                     {
                         string ServerFolderPath = Server.MapPath("/");
                         string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
@@ -46,7 +46,7 @@ namespace MvcApplication10.Controllers
                         string ServerDomainName = Request.Url.Authority;
                         string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
                         string messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
-                        result = new PocketModel(Guid.Empty, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
+                        result = new PocketModel(SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
 
                         sm.Set("pocketModel", result);
                     }
@@ -112,46 +112,22 @@ namespace MvcApplication10.Controllers
                         || Request.AcceptTypes.Any(r => r.ToLower() == "application/xhtml+xml")
                         || Request.AcceptTypes.Any(r => r.ToLower() == "application/xml")))
             {
-                NameValueCollection qscoll = HttpUtility.ParseQueryString(HttpContext.Request.Url.Query);
-                if (qscoll.Count > 0)
-                {
-                    string source = qscoll["source"];
-                    string id = qscoll["id"];
-                    if (source != null && id != null)
-                    {
-                        if (Pocket == null || id.ToLower() != Pocket.Id.ToString().ToLower())
-                        {
-                            SessionManager sm = new SessionManager();
-
-                            string ServerFolderPath = Server.MapPath("/");
-                            string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-                            if (!String.IsNullOrEmpty(AllPocketsFolderPath))
-                            {
-                                AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
-                            }
-                            string ServerDomainName = Request.Url.Authority;
-                            PocketModel result = new PocketModel(new Guid(id), source, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, "", "");
-
-                            sm.Set("pocketModel", result);
-
-                            return Redirect("/");//плохое решение - лучше бы как-то удалять параметры
-                        }
-                    }
-                }
                 if (Pocket == null)
                 {
-                    return RedirectToAction("Index", "Home");
+                    return Content(String.Format("Invalid pocket. Url = '{0}'", ConfigurationManager.AppSettings["PocketSource"]));
                 }
-
-                string content = Pocket.GetContent(Request.Url, false);
-
-                foreach (var ControlName in SharedControls)
+                else
                 {
-                    string template = RenderRazorViewToString(ControlName.Value, "");
-                    content = content.Replace("@" + ControlName.Key, template);
-                }
+                    string content = Pocket.GetContent(Request.Url, false);
 
-                return Content(content);
+                    foreach (var ControlName in SharedControls)
+                    {
+                        string template = RenderRazorViewToString(ControlName.Value, "");
+                        content = content.Replace("@" + ControlName.Key, template);
+                    }
+
+                    return Content(content);
+                }
             }
             else if (ContentType == "application/javascript" || ContentType == "text/css")
             {
@@ -243,52 +219,5 @@ namespace MvcApplication10.Controllers
             return Json(jm);
         }
 
-        [AcceptVerbs(HttpVerbs.Post)]
-        public ActionResult Init(FormCollection collection)
-        {
-            JsonMessage jm = new JsonMessage();
-
-            string SourceUrl = collection["source"];
-
-            Uri uriResult;
-            if (Uri.TryCreate(SourceUrl, UriKind.Absolute, out uriResult) && uriResult.Scheme == Uri.UriSchemeHttp)
-            {
-
-                PocketModel result = null;
-
-                SessionManager sm = new SessionManager();
-
-                Guid Id = Guid.NewGuid();
-
-                string ServerFolderPath = Server.MapPath("/");
-                string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-                if (!String.IsNullOrEmpty(AllPocketsFolderPath))
-                {
-                    AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
-                }
-                string ServerDomainName = Request.Url.Authority;
-                string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
-                string messageto = "";
-                result = new PocketModel(Id, SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
-
-                sm.Set("pocketModel", result);
-
-                jm.Object = result.CurrentProjectLink;
-                jm.Result = true;
-            }
-            else
-            {
-                jm.Result = false;
-                jm.Message = "Адрес сайта-образца определeн как некорректный: " + SourceUrl;
-            }
-
-            return Json(jm);
-        }
-
-        [AcceptVerbs(HttpVerbs.Post)]
-        public ActionResult GetConfig()
-        {
-            return Json(Pocket.ReplacementModel.EditableItems);
-        }
     }
 }
