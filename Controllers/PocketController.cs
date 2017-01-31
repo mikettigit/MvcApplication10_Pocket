@@ -114,7 +114,7 @@ namespace MvcApplication10.Controllers
             {
                 if (Pocket == null)
                 {
-                    return Content(String.Format("Invalid pocket. Url = '{0}'", ConfigurationManager.AppSettings["PocketSource"]));
+                    return Content(String.Format("Invalid pocket"));
                 }
                 else
                 {

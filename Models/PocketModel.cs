@@ -129,7 +129,7 @@ namespace MvcApplication10.Models
                 else
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(ConfigFilePath));
-                    xConfiguration = CreateEmptyConfigFile(messagefrom, messageto, ConfigFilePath, locked);
+                    xConfiguration = CreateEmptyConfigFile(ConfigFilePath, messagefrom, messageto, locked);
                 }
             }
             ReplacementModel = new ReplacementModel(xConfiguration);
@@ -138,7 +138,7 @@ namespace MvcApplication10.Models
             EnhanceModel = new EnhanceModel(this);
         }
 
-        private XElement CreateEmptyConfigFile(string _messagefrom, string _messageto, string _configfilepath, bool _locked = false)
+        private XElement CreateEmptyConfigFile(string _configfilepath, string _messagefrom, string _messageto, bool _locked = false)
         {
             XElement xConfiguration = new XElement("Configuration");
                 XElement xNotifications = new XElement("Notifications");
