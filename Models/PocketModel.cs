@@ -12,8 +12,6 @@ namespace MvcApplication10.Models
 {
     public class PocketModel
     {
-        private Guid id;
-
         private string serverdomainname;
         private string serverfolderpath;
 
@@ -26,25 +24,10 @@ namespace MvcApplication10.Models
 
         private bool locked;
 
-        public Guid Id
-        {
-            get {
-                return id;
-            }
-        }
-
         public string ServerDomainName
         {
             get {
                 return serverdomainname;
-            }
-        }
-
-        public string CurrentProjectLink
-        {
-            get
-            {
-                return "http://" + ServerDomainName + "?source=" + HttpUtility.HtmlEncode(sourceurl) + "&id=" + id.ToString();
             }
         }
               
@@ -79,7 +62,7 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string AllPocketsFolderPath
+        private string AllPocketsFolderPath
         {
             get
             {
@@ -92,7 +75,7 @@ namespace MvcApplication10.Models
             get
             {
                 Uri uri = new Uri(sourceurl);
-                return AllPocketsFolderPath + uri.Host + (Id == Guid.Empty ? "" : "_" + Id.ToString()) + "\\";
+                return AllPocketsFolderPath + uri.Host + "\\";
             }
         }
 
@@ -117,9 +100,8 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(Guid _id, string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto, bool _locked = false)
+        public PocketModel(string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto, bool _locked = false)
         {
-            id = _id;
             sourceurl = _sourceurl.TrimEnd('/');
             serverdomainname = _serverdomainname;
             serverfolderpath = _serverfolderpath;
@@ -147,7 +129,7 @@ namespace MvcApplication10.Models
                 else
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(ConfigFilePath));
-                    xConfiguration = CreateEmptyConfigFile(id, messagefrom, messageto, ConfigFilePath, locked);
+                    xConfiguration = CreateEmptyConfigFile(messagefrom, messageto, ConfigFilePath, locked);
                 }
             }
             ReplacementModel = new ReplacementModel(xConfiguration);
@@ -156,11 +138,9 @@ namespace MvcApplication10.Models
             EnhanceModel = new EnhanceModel(this);
         }
 
-        private XElement CreateEmptyConfigFile(Guid _id, string _messagefrom, string _messageto, string _configfilepath, bool _locked = false)
+        private XElement CreateEmptyConfigFile(string _messagefrom, string _messageto, string _configfilepath, bool _locked = false)
         {
             XElement xConfiguration = new XElement("Configuration");
-                XAttribute xId = new XAttribute("id", _id.ToString());
-                xConfiguration.Add(xId);
                 XElement xNotifications = new XElement("Notifications");
                     XElement XMessageFrom = new XElement("MessageFrom", _messagefrom);
                 xNotifications.Add(XMessageFrom);
