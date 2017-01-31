@@ -1,0 +1,45 @@
+if (!window.console) {window.console = {};}
+if (!console.log) {console.log = function() {};}
+if (!console.warn) {console.warn = function() {};}
+
+var path = (window.location.path)? window.location.path: window.location.pathname;
+var currentLocation = (window.location.origin)? window.location.origin: window.location.host;
+var otherLocation;
+var loginOrHomePage = false;
+
+for (var i = 0; i < sharedCartUrls.length; i++) {
+    var sharedCookieUrl = sharedCartUrls[i].url;
+    if (sharedCookieUrl.indexOf(currentLocation) != -1) {
+        console.log("Looking for home or login page on : " + currentLocation);
+        if (path == ""
+                || path == "/"
+                || path == "/#"
+                || path == "/en"
+                || path == "/user"
+                || path == "/agentAccept"
+                || path == "/agentReject"
+                || path.indexOf("/en/login") != -1
+                || path.indexOf("about") != -1
+                || path.indexOf("company-movie") != -1
+                || path.indexOf("privacy-policy") != -1
+                || path.indexOf("sales-terms") != -1
+                || path.indexOf("packaging") != -1
+                || path.indexOf("shipping") != -1
+                || path.indexOf("video") != -1
+                || path.indexOf("contact") != -1
+                || path.indexOf("size-conversion-chart") != -1) {
+            loginOrHomePage = true;
+        }
+    } else {
+        console.log("Set the other url to the local one");
+        otherLocation = sharedCartUrls[i].url;
+    }
+}
+
+if (typeof user == "undefined" || user == undefined || !user.username) {
+    if (!loginOrHomePage) {
+        console.log("Redirecting to login page");
+        window.location.href = "/" + language + "/login?original=" + encodeURIComponent(
+                window.location.pathname + window.location.search + window.location.hash) + "#/";
+    }
+}

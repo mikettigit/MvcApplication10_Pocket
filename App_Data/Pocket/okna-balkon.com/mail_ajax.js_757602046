@@ -1,0 +1,25 @@
+$(document).ready(function() {
+
+	$("form").submit(function() {
+
+		$('input[type="submit"]', this).prop('disabled', true); //отключение кнопки во время отправки
+	    $('input[type="submit"]', this).val('Успешно отправлено!'); //смена текста кнопки во время отправки
+
+		$.ajax({
+			type: "POST",
+			url: "/mail.php",
+			data: $(this).serialize()
+		}).done(function() {
+			
+			yaCounter37173225.reachGoal("zakaz");
+			
+			alert("Спасибо! Заявка успешно отправлена.");
+			
+			//$('input[type="submit"]', this).val('Успешно отправлено!');
+			//window.location.href = "/spasibo.php"; //перенаправление на страницу Спасибо
+			
+		});
+		return false;
+	});
+
+});

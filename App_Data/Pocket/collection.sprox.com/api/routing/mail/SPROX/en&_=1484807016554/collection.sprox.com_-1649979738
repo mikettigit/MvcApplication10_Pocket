@@ -1,0 +1,1 @@
+{"name":{"name":"mail"},"content":"https://services.cortina.be/content/mail","javascriptFile":"https://services.cortina.be/content/mail/mail.js","cssFile":null,"calls":[{"name":"getKey","method":"GET","path":"https://services.cortina.be/api/mail"},{"name":"sendMail","method":"POST","path":"https://services.cortina.be/api/mail/send"}],"requestSkeleton":null}

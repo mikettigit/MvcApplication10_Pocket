@@ -1,0 +1,39 @@
+$(function(){
+	
+	var $popup = $('#free-msrmnt.modal');
+
+	$('.zamer-lnk').click(function(){
+		fadePp($popup);
+	});
+
+	$popup.find('button[type="submit"]')
+	.click(function(){
+
+		if ( CheckImpts($popup)==false ) return false;
+
+		sendZamer($popup);
+		
+		return false;
+	});
+
+});
+
+var sendZamer = function ($popup) {
+
+	var $srz = $popup.find('form').serializeArray();
+
+	$.post('/js/PopUps/sender.php',{
+
+		fields: $srz
+
+	},function($request){
+
+		$req = jQuery.parseJSON($request);
+
+		if ($req.status=='send') {
+
+			alert('Успешно!');
+		 }
+
+	});
+}

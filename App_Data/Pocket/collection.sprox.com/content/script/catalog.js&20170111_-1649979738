@@ -1,0 +1,908 @@
+function empty(data) {
+	if (typeof(data) == 'number' || typeof(data) == 'boolean') {
+		return false;
+	}
+	if (typeof(data) == 'undefined' || data === null) {
+		return true;
+	}
+	if (typeof(data.length) != 'undefined') {
+		return data.length == 0;
+	}
+	var count = 0;
+	for (var i in data) {
+		if (data.hasOwnProperty(i)) {
+			count++;
+		}
+	}
+	return count == 0;
+}
+
+rdsApp.config(function ($routeProvider, $locationProvider) {
+	$routeProvider
+		.when('/list', {
+			templateUrl: '/content/catalog/catalog_list.html',
+			controller: 'CatalogController',
+			controllerAs: 'catalogCtrl'
+		})
+		.when('/detail', {
+			templateUrl: '/content/catalog/catalog_detail.html',
+			controller: 'CatalogController',
+			controllerAs: 'catalogCtrl'
+		})
+		.when('/cart', {
+			templateUrl: '/content/catalog/catalog_cart.html',
+			controller: 'CatalogController',
+			controllerAs: 'catalogCtrl'
+		})
+		.when('/portfolio', {
+			templateUrl: '/content/catalog/portfolio.html',
+			controller: 'CatalogController',
+			controllerAs: 'catalogCtrl'
+		});
+});
+
+
+rdsApp.controller("CatalogController", ['$scope', '$rootScope', 'menuService', 'cartService', 'articleService', 'filterService', 'settingsService', 'priceService', 'orderService', 'favouritesService', 'profileService', '$location', '$routeParams', '$route', '$modal', '$timeout', '$http', '$log', 'translationService', 'printOptionService', 'offerComparisonService', function ($scope, $rootScope, menuService, cartService, articleService, filterService, settingsService, priceService, orderService, favouritesService, profileService, $location, $routeParams, $route, $modal, $timeout, $http, $log, translationService, printOptionService, offerComparisonService) {
+	var controller = this;
+	menuService.popupVisible = false;
+	$scope.show360 = false;
+	$scope.inStockMenu = cartService.isInStockMenu();
+
+	// Used for the toggle the offerinfo panel
+	$scope.status = {};
+	$scope.status.offerInfoOpen = true;
+	$scope.model = {};
+
+	$scope.model.seasonComparisons = [];
+	$scope.model.showComparisons = false;
+	$scope.model.comparisons = null;
+	$scope.model.fetchingComparisons = false;
+	$scope.model.comparisonError = null;
+
+	if ($location.path() === "/cart" && (cartService.groupedByLastAndMould || cartService.groupedByMouldAndLast)) {
+		if (!!cartService.cart.articlegroups)
+			cartService.groupByArticle();
+	}
+
+	// Used to check if the stock should be shown in the table
+	$scope.showCartonsOnStockHeaderOnDetailVar = false;
+
+	controller.showImageSizeSelector = function () {
+		return $location.path() === "/list";
+	};
+
+	filterService.initFilters();
+
+	$scope.getParameters = function () {
+		var str = window.location.search;
+		var objURL = {};
+
+		str.replace(
+			new RegExp("([^?=&]+)(=([^&]*))?", "g"),
+			function ($0, $1, $2, $3) {
+				objURL[$1] = $3;
+			}
+		);
+		return objURL;
+	};
+
+	$rootScope.$on('$locationChangeStart', function (event, newUrl, oldUrl) {
+		if ($scope.cartFormDetails && $scope.cartForm) {
+			if ($scope.cartFormDetails.$dirty || $scope.cartForm.$dirty) {
+				var answer = confirm("Are you sure you want to leave without saving your changes?");
+				if (!answer) {
+					event.preventDefault();
+				}
+			}
+		}
+	});
+
+	// not navigating when changes occured in the cart
+//	window.onbeforeunload = function (event) {
+//		if ($scope.cartFormDetails && $scope.cartForm) {
+//			if ($scope.cartFormDetails.$dirty || $scope.cartForm.$dirty) {
+//				return "Are you sure you want to leave without saving your changes?";
+//			}
+//		}
+//	};
+
+
+	$scope.addUnloadEvent = function () {
+		if (window.addEventListener) {
+			window.addEventListener("beforeunload", handleUnloadEvent);
+		} else {
+			//For IE browsers
+			window.attachEvent("onbeforeunload", handleUnloadEvent);
+		}
+	}
+
+	function handleUnloadEvent(event) {
+		if ($scope.cartFormDetails && $scope.cartForm) {
+			if ($scope.cartFormDetails.$dirty || $scope.cartForm.$dirty) {
+				event.returnValue = "Are you sure you want to leave without saving your changes?";
+			}
+		}
+	};
+
+//Call this when you want to remove the event, example, if users fills necessary info
+	$scope.removeUnloadEvent = function () {
+		if (window.removeEventListener) {
+			window.removeEventListener("beforeunload", handleUnloadEvent);
+		} else {
+			window.detachEvent("onbeforeunload", handleUnloadEvent);
+		}
+	}
+	$scope.addUnloadEvent();
+
+
+	controller.hideFilters = function () {
+		jQuery("section.filterBlock").hide();
+		jQuery("section.seasonFilterSection").hide();
+	};
+
+	controller.showFilters = function () {
+		jQuery("section.filterBlock").show();
+		jQuery("section.seasonFilterSection").show();
+	};
+
+	controller.loadConditions = function () {
+		var intervalConditionsCount = 0;
+		var intervalConditions = setInterval(function () {
+			if (settingsService.settings.customer.id && !!settingsService.settings.customer.environmentCode) {
+				clearInterval(intervalConditions);
+				$scope.conditionsError = null;
+				var promise = profileService.getConditions(settingsService.settings.customer.id, settingsService.settings.customer.environmentCode);
+				if (promise) {
+					promise.then(function (response) {
+						$scope.conditionsError = null;
+					}, function (error) {
+						$scope.conditionsError = "Error loading conditions.";
+					})
+				} else {
+					$scope.conditionsError = "Error loading conditions.";
+				}
+			} else {
+				if (++intervalConditionsCount === 400) {
+					clearInterval(intervalConditions);
+					console.error("Could not load conditions because Customer could not be found.");
+					controller.conditionsError = "Error loading conditions.";
+				}
+			}
+		}, 100);
+	};
+
+	controller.saveAndPreviewOffer = function () {
+		if (empty(settingsService.settings.customer)) {
+			$scope.showCustomerMissingPopup();
+		} else if (!$scope.isVATPresent()) {
+			$scope.showCustomerMissingVATPopup($scope.saveAgentOffer);
+		} else if (!$scope.isSampleDetailsValid()) {
+			$scope.showSampleDetailsInvalidPopup();
+		} else {
+			$scope.removeUnloadEvent();
+			jQuery("body").busyWithOfferMessage(language);
+			if (cartService.createOffer(false, true)) {
+				var interval = setInterval(function () {
+					cartService.createPreview($scope.cartFormDetails, $scope.cartForm, interval);
+				}, 100);
+			}
+		}
+	};
+
+	controller.saveAndCloseOffer = function () {
+
+		// performance
+		var performance = window.performance;
+		var t0 = performance.now();
+
+		if (empty(settingsService.settings.customer) || !jQuery.isPlainObject(settingsService.settings.customer) || !settingsService.settings.customer.id) {
+			$scope.showCustomerMissingPopup();
+		} else if (!$scope.isVATPresent()) {
+			$scope.showCustomerMissingVATPopup($scope.saveAgentOffer);
+		} else if (!$scope.isSampleDetailsValid()) {
+			$scope.showSampleDetailsInvalidPopup();
+		} else {
+			$scope.removeUnloadEvent();
+			if (cartService.createOffer(false, false, true)) {
+				
+				// performance
+				console.log("after cartService.createOffer: " + (performance.now() - t0) + " milliseconds.");
+				$log.debug("save and close: refId:", window.sessionStorage.getItem("refID"));
+				
+				var interval = setInterval(function () {
+					if (!cartService.busyCreatingOrder) {
+						var refID = window.sessionStorage.getItem("refID");
+						//FIXME double offers: (maybe) something with settings.update, and/or settingsService.setOffer when save & preview?
+						settingsService.settings.update = true;
+						settingsService.settings.refId = refID;
+						clearInterval(interval);
+						if ($scope.cartFormDetails) $scope.cartFormDetails.$dirty = false;
+						if ($scope.cartForm) $scope.cartForm.$dirty = false;
+
+						// performance
+						console.log("saveAndCloseOffer: " + (performance.now() - t0) + " milliseconds.");
+
+						// go to offers overview
+						window.location.href = "/" + language + "/my-zone#/offers";
+					}
+				}, 100);
+			}
+		}
+	};
+
+	var searchData = {};
+	if ($location.path() === "/list") {
+		var gotoOverview = false;
+		articleService.updateCurrentPage();
+		if ($location.search().resetFilters == "true" || $location.search().resetFilters == true) {
+			articleService.currentPage = 1;
+		}
+
+		controller.showFilters();
+
+		if ($location.search().search) {
+			filterService.filters.search = $location.search().search.split(";");
+		}
+		// This is done when we want to update the order.
+		// The parameters come from cartService.getEditLink //
+		// @See {cartService.getEditLink}
+		if ($location.search().offerRefID) {
+			var customerId = $location.search().customerId;
+
+			cartService.removeCartFromSessionStorage();
+			searchData.offerRefID = $location.search().offerRefID;
+			searchData.cartId = $location.search().cartId;
+			searchData.customerId = customerId;
+			searchData.contact = {};
+			searchData.contact.contactSequence = $location.search().contact;
+			searchData.settings = settingsService.settings;
+			gotoOverview = true;
+			settingsService.settings.offerRefID = searchData.offerRefID;
+			settingsService.settings.orderJustLoaded = true;
+			if (settingsService.isAgent() && (!settingsService.settings.customer || settingsService.settings.customer.id != customerId))
+				settingsService.settings.customer = {number: customerId, environmentCode: $location.search().environmentCode};
+		}
+
+		searchData.category1 = $location.search().cat1;
+		searchData.category2 = $location.search().cat2;
+		searchData.category3 = $location.search().cat3;
+		searchData.category4 = $location.search().cat4;
+		searchData.search = filterService.filters.search.join(";");
+		searchData.mail = $location.search().mail;
+		searchData.sortBy = $location.search().sortBy;
+
+		articleService.searchArticles(searchData, undefined, true);
+		if (searchData.sortBy) {
+			switch (searchData.sortBy) {
+				case 'bestSold':
+					articleService.orderBy = "sortBestSold";
+					break;
+				case "catalog":
+					articleService.orderBy = "sortCatalog";
+					break;
+				case "style":
+					articleService.orderBy = "style";
+					break;
+			}
+		}
+		if (searchData.gender) {
+			searchData.category2 = searchData.gender;
+		}
+		menuService.selectMenu(searchData.category1, searchData.category2, searchData.category3, searchData.category4);
+
+		// We set this so we can go back after navigating shoes 1 by 1
+		articleService.setListHash($location.url());
+
+		if ($location.search().resetFilters === 'true') {
+			filterService.resetFilters();
+			$location.search("resetFilters", "false");
+		}
+		//reset the searchfield after searching...
+		filterService.filters.search = [];
+
+		if (settingsService.isAgent() && gotoOverview) {
+			$location.path("/cart");
+		}
+	} else if ($location.path() === "/detail") {
+		controller.hideFilters();
+
+		searchData.article = $location.search().article;
+		searchData.brand = $location.search().brand;
+		searchData.category = $location.search().category;
+		searchData.color = $location.search().color;
+
+		searchData.cat1 = $location.search().cat1;
+		searchData.cat2 = $location.search().cat2;
+		searchData.cat3 = $location.search().cat3;
+		searchData.cat4 = $location.search().cat4;
+		searchData.mail = $location.search().mail;
+		console.log($scope.getParameters());
+
+		var campaignObject = $scope.getParameters()["utm_campaign"];
+		console.log(campaignObject);
+		if ($scope.getParameters()["utm_campaign"]) {
+			console.log($scope.getParameters()["utm_campaign"].replace("/[+]/g", " "));
+			searchData.campaign = $scope.getParameters()["utm_campaign"].replace("/[+]/g", " ");
+		}
+
+		$log.debug("searchdata: ", searchData);
+		articleService.getArticle(searchData);
+	} else if ($location.path() === "/cart") {
+		menuService.resetBreadCrumbs();
+		controller.hideFilters();
+		controller.loadConditions();
+		cartService.calculateTotalMargin(cartService.cart);
+		$timeout(function () {
+			var elements = jQuery("input#scannedData");
+			if (elements.length > 0) {
+				elements[0].focus();
+			}
+		});
+	} else {
+		controller.hideFilters();
+	}
+
+	$scope.showArticleRemark = function (prepack) {
+		var elementId = 'articleRemark-' + prepack.id;
+		var element = document.getElementById(elementId);
+
+		element.className = element.className.replace("ng-hide", "");
+		element.focus();
+	};
+
+	$scope.createAgentOffer = function () {
+		if (!settingsService.isAgent()) {
+			$scope.createOffer();
+		} else {
+			if (empty(settingsService.settings.customer)) {
+				$scope.showCustomerMissingPopup();
+			} else if (!$scope.isVATPresent()) {
+				$scope.showCustomerMissingVATPopup($scope.saveAgentOffer);
+			} else {
+				$scope.cartFormDetails.$dirty = false;
+				$scope.cartForm.$dirty = false;
+				$scope.showAgentOfferPopup();
+			}
+		}
+	};
+
+	$scope.saveAgentOffer = function () {
+		if (empty(settingsService.settings.customer)) {
+			$scope.showCustomerMissingPopup();
+		} else if (!$scope.isVATPresent()) {
+			$scope.showCustomerMissingVATPopup($scope.saveAgentOffer);
+		} else {
+			jQuery("body").busyWithOfferMessage(language);
+			cartService.createOffer(false, true);
+			$scope.cartFormDetails.$dirty = false;
+			$scope.cartForm.$dirty = false;
+			window.location.href = "/" + language + "/my-zone#/offers";
+		}
+	};
+
+	$scope.isVATPresent = function () {
+		return true;
+//        return !(!settingsService.settings.customer.vatNumber || settingsService.settings.customer.vatNumber == ""
+//            || settingsService.settings.customer.vatNumber == undefined || settingsService.settings.customer.vatNumber == null);
+	};
+
+	$scope.createOffer = function () {
+		$scope.cartFormDetails.$dirty = false;
+		$scope.cartForm.$dirty = false;
+
+		if (!$scope.isVATPresent()) {
+			$scope.showCustomerMissingVATPopup($scope.createOffer);
+		} else {
+			$scope.getCartService().createOffer(false, false, true);
+		}
+	};
+
+	$scope.emptyCart = function () {
+		$scope.getCartService().emptyCart($scope.cartFormDetails, $scope.cartForm);
+	};
+
+	$scope.setOrderBy = function (field) {
+		articleService.orderBy = field;
+		articleService.sortArticles(field);
+	};
+
+	$scope.getOrderBy = function () {
+		return articleService.orderBy;
+	};
+
+	$scope.setImageSize = function (size) {
+		articleService.imageSize = size;
+	};
+
+	$scope.showPerspective = function (perspective) {
+		$scope.show360 = false;
+		$scope.getSelectedArticle().perspective = perspective;
+	};
+
+	$scope.show360Images = function () {
+		$scope.show360 = true;
+		articleService.rotation.playOnce();
+
+	};
+
+	$scope.getDetailLink = function (article) {
+		return articleService.getDetailLink(article);
+	};
+
+	$scope.getDetailLinkOfFirstColor = function (article) {
+		var color = article.colors[0];
+		return articleService.getDetailLink(color);
+	};
+
+
+	$scope.getDownloadImagesLink = function (article) {
+		return "/action/" + site_code + "/" + language + "/article/downloadImages/" + article.brand + "/" + article.article + "/" + article.color;
+	};
+
+	$scope.getDownloadProductInformationLink = function (article) {
+		return "/action/" + site_code + "/" + language + "/article/downloadProductInformation/" + article.brand + "/" + article.article + "/" + article.color;
+	};
+
+	$scope.getImage = function (article) {
+		return articleService.getImage(article);
+	};
+
+	$scope.getSmallImg = function (article) {
+		return articleService.getSmallImg(article);
+	};
+
+	$scope.getMediumImg = function (article) {
+		return articleService.getMediumImg(article);
+	};
+
+	$scope.getBigImg = function (article) {
+		return articleService.getBigImg(article);
+	};
+
+	$scope.getSmallImgBase = function () {
+		return imagePath + "/small/";
+	};
+
+	$scope.getLogoImg = function (article) {
+		return staticContent + "/image/brand/" + article.articleLogo + ".JPG";
+	};
+
+	$scope.showCustomerMissingPopup = function () {
+		var inst = $modal.open({
+			templateUrl: '/customerMissing.inline',
+			controller: 'PopupWindowController',
+			size: 255
+		});
+	};
+
+	$scope.showCustomerMissingVATPopup = function (callback) {
+		var inst = $modal.open({
+			templateUrl: '/customerMissingVAT.inline',
+			controller: 'MissingVATNumberPopupWindowController',
+			size: 255,
+			resolve: {
+				callback: function () {
+					return callback;
+				}
+			}
+		});
+	};
+
+	$scope.showSampleDetailsInvalidPopup = function () {
+		var inst = $modal.open({
+			templateUrl: "/sampleDetailsInvalid.inline",
+			controller: "SampleDetailsInvalidPopupWindowController",
+			windowClass: 'sampledetails-modal-window'
+		});
+	};
+
+	$scope.isSampleDetailsValid = function () {
+		var valid = true;
+
+		if (settingsService.settings.showSampleInfo) {
+			if (!settingsService.settings.samplesAgent || !settingsService.settings.samplesAgent.name) {
+				valid = false;
+			}
+
+			if (!settingsService.settings.samplesFeet) {
+				valid = false;
+			}
+
+			if (settingsService.settings.samplesCorrectColor == null || typeof(settingsService.settings.samplesCorrectColor) == "undefined") {
+				valid = false;
+			}
+
+			if (settingsService.settings.samplesFollowUp == null || typeof(settingsService.settings.samplesFollowUp) == "undefined") {
+				valid = false;
+			}
+
+			if (settingsService.settings.samplesFollowUp && !settingsService.settings.samplesFollowUpDate) {
+				valid = false;
+			}
+		}
+
+		return valid;
+	};
+
+	$scope.showAgentOfferPopup = function () {
+		cartService.showAgentOfferPopup(true);
+	};
+
+
+	$scope.popupBigImage = function (article) {
+		var inst = $modal.open({
+			templateUrl: '/bigImagePopup.inline',
+			controller: 'BigImagePopupWindowController',
+			size: "lg",
+			windowClass: "testModalClass",
+			resolve: {
+				imagePath: function () {
+					return $scope.getBigImg(article);
+				}
+			}
+		});
+	};
+
+	$scope.openFollowUp = function ($event, elementOpened) {
+		$event.preventDefault();
+		$event.stopPropagation();
+		$scope.model[elementOpened] = true;
+	};
+
+	$scope.openValidTill = function ($event, elementOpened) {
+		$event.preventDefault();
+		$event.stopPropagation();
+		$scope.model[elementOpened] = true;
+	};
+
+	$scope.getCartService = function () {
+		return cartService;
+	};
+
+	$scope.getFilterService = function () {
+		return filterService;
+	};
+
+	$scope.getArticleService = function () {
+		return articleService;
+	};
+
+	$scope.getSettingsService = function () {
+		return settingsService;
+	};
+
+	$scope.getFavouritesService = function () {
+		return favouritesService;
+	};
+
+	$scope.getProfileService = function () {
+		return profileService;
+	};
+
+	$scope.selectColor = function (article) {
+		$scope.show360 = false;
+		articleService.selectedArticle = article;
+		articleService.reload360(article);
+	};
+
+	$scope.getArticles = function () {
+		return articleService.articles;
+	};
+
+	$scope.getImageResolutionClass = function () {
+		return articleService.imageSize;
+	};
+
+	$scope.showPrice = function () {
+		return priceService.showPrice();
+		//return false;
+	};
+
+	$scope.getPrice = function (basePrices) {
+		return priceService.getPrice(basePrices);
+		//return "";
+	};
+
+	$scope.showRRP = function () {
+		return priceService.showRRP();
+		//return false;
+	};
+
+	$scope.showMargin = function () {
+		return settingsService.settings.showMargin;
+	};
+
+	$scope.showCartonsOnStockRow = function (prepack) {
+		return priceService.showCartonsOnStockRow(prepack);
+	};
+
+	$scope.showCartonsOnStockHeader = function (article) {
+		return priceService.showCartonsOnStockHeader(article);
+	};
+
+	$scope.showCartonsOnStockHeaderOnDetail = function (article) {
+		var result = priceService.showCartonsOnStockHeaderOnDetail(article);
+		$scope.showCartonsOnStockHeaderOnDetailVar = $scope.showCartonsOnStockHeaderOnDetailVar || result;
+		return result;
+	};
+
+	$scope.showArrivalHeader = function (article) {
+		var showHeader = false;
+		if (article.items) {
+			for (var i = 0; i < article.items.length; i++) {
+				if (article.items[i].assortmentExtension == 'EDL') {
+					if (article.items[i].firstArrivalDate) {
+						showHeader = true;
+					}
+				}
+			}
+		}
+
+		return showHeader;
+	};
+
+
+	$scope.getRRP = function (basePrices) {
+		return priceService.getRRP(basePrices);
+		//return "";
+	};
+
+	$scope.showNumbers = function () {
+		if (settingsService.isAgent()) {
+			return false;
+		} else {
+			return settingsService.isRetailClient();
+		}
+	};
+
+	$scope.getDescriptionForIcon = function (icon) {
+		var description = "";
+		angular.forEach(filterService.icons, function (i) {
+			if (i.id == icon) {
+				description = i.description;
+				return true;
+			}
+		});
+		return description;
+	};
+
+	$scope.getMinOrderQty = function (prepack) {
+		if (settingsService.isAgent() || settingsService.settings.customer.environmentCode == "E") {
+			return 1;
+		} else {
+			return prepack.min * prepack.pairs;
+		}
+	};
+
+	$scope.getSelectedArticle = function () {
+		return articleService.selectedArticle;
+	};
+
+	$scope.itemVisible = function (item) {
+		var visible = true;
+		if (settingsService.settings.collection == 'RETAIL') {
+			visible = item.retail;
+		} else if (settingsService.settings.collection == 'PRIVATE') {
+			visible = (item.retail || item.assortmentExtension == "" || item.labelCode == settingsService.settings.customer.labelCode 
+					|| item.assortmentExtension == "EDL" || item.assortmentExtension == "RDS");
+//		} else {
+//			return true;
+		}
+		item.itemVisible = visible;
+		return visible;
+	};
+
+	$scope.getCurrentArticles = function () {
+		return articleService.currentArticles;
+	};
+
+	$scope.isRegisteredDesign = function (article) {
+		return (article.collectionCategory == "Brands" || article.collectionCategory == "Leomil");
+	};
+
+	$scope.isLicense = function (article) {
+		return (article.collectionCategory == "Leomil");
+	};
+
+	$scope.getPriceService = function () {
+		return priceService;
+	};
+
+	$scope.getCartService = function () {
+		return cartService;
+	};
+
+	$scope.getMenuService = function () {
+		return menuService;
+	};
+
+	$scope.initPortfolioItems = function () {
+		var portfolio = [];
+		$http.get('/action/' + site_code + '/' + language + '/catalog/portfolio').success(function (data) {
+			portfolio = data;
+			var portfolioItems = [];
+			angular.forEach(portfolio, function (item) {
+				var portfolioItem = {};
+				portfolioItem.displayName = item;
+				portfolioItem.link = "/" + language + "/catalog#/list?a=a&cat1=Portfolio&cat2=" + encodeURIComponent(item) + "&cat3=All styles...&resetFilters=true";
+				portfolioItem.imageLink = "/sites/all/themes/sprox2/img/portfolio/" + item.toLowerCase() + ".jpg";
+				portfolioItems.push(portfolioItem);
+			});
+
+			$scope.portfolioItems = portfolioItems;
+
+			return $scope.portfolioItems;
+		});
+	};
+
+	$scope.getPortfolioItems = function () {
+		if (!$scope.portfolioItems) {
+			$scope.portfolioItems = [];
+			$scope.initPortfolioItems();
+		}
+		return $scope.portfolioItems;
+	};
+
+	$scope.toggleSelect = function (array, value) {
+		var index = array.indexOf(value);
+		if (index > -1)
+			array.splice(index, 1);
+		else
+			array.push(value);
+
+	};
+
+	$scope.getComparison = function (last, mould) {
+		if (!$scope.model.comparisons)
+			return;
+
+		if (!$scope.model.comparisons[last] || !$scope.model.comparisons[last][mould]) {
+			if (!$scope.model.comparisons[last])
+				$scope.model.comparisons[last] = {};
+
+			$scope.model.comparisons[last][mould] = [];
+			$scope.model.fetchingComparisons = true;
+			var customer = settingsService.settings.customer;
+
+			offerComparisonService.getOfferComparison(customer.number, customer.environmentCode, last, mould, $scope.model.comparisons.seasons).then(function (data) {
+				$scope.model.fetchingComparisons = false;
+				$scope.model.comparisons[last][mould] = data[last][mould];
+			}, function (error) {
+				$scope.model.fetchingComparisons = false;
+				$scope.model.comparisonError = translationService.translate("ERROR_OFFERCOMPARE_UNABLE_RETRIEVE");
+				delete $scope.model.comparisons[last][mould];
+			});
+		}
+	};
+
+	$scope.getComparisons = function () {
+		$scope.model.comparisons = null;
+		$scope.model.comparisonError = null;
+
+		if ($scope.model.seasonComparisons.length == 0)
+			$scope.model.comparisonError = translationService.translate("ERROR_OFFERCOMPARE_SELECT_SEASON");
+
+		if (!!$scope.model.comparisonError)
+			return;
+
+		var articlegroups = cartService.cart.articlegroups;
+		var lastsAndMoulds = [];
+
+		for (var i = 0; i < articlegroups.length; i++) {
+			var last = articlegroups[i].keys.last.toUpperCase();
+			var mould = articlegroups[i].keys.mould.toUpperCase();
+			var found = false;
+			for (var j = 0; j < lastsAndMoulds.length; j++) {
+				if (lastsAndMoulds[j].last == last && lastsAndMoulds[j].mould == mould) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				lastsAndMoulds.push({last: last, mould: mould});
+		}
+
+		var customer = settingsService.settings.customer;
+
+		$scope.model.fetchingComparisons = true;
+
+		offerComparisonService.getOfferComparisons(customer.number, customer.environmentCode, lastsAndMoulds, $scope.model.seasonComparisons).then(function (data) {
+			data.seasons = angular.copy($scope.model.seasonComparisons);
+			$scope.model.comparisons = data;
+			$scope.model.fetchingComparisons = false;
+		}, function (error) {
+			$scope.model.fetchingComparisons = false;
+			$scope.model.comparisonError = translationService.translate("ERROR_OFFERCOMPARE_UNABLE_RETRIEVE");
+		});
+	};
+
+	$scope.getCurrencySymbol = function (currency) {
+		var symbol = "€";
+		switch (currency) {
+			case "EUR":
+				symbol = "€";
+				break;
+			case "USD":
+				symbol = "$";
+				break;
+			case "GBP":
+				symbol = "£";
+				break;
+		}
+
+		return symbol
+	};
+
+	$scope.resetSeasonComparisons = function () {
+		$scope.model.seasonComparisons = [];
+		$scope.model.comparisons = null;
+		$scope.model.comparisonError = null;
+	};
+
+	$scope.boolToString = function (bool) {
+		return bool ? 'Yes' : 'No';
+	};
+
+	var today = new Date();
+
+	$scope.dateOptions = {
+		formatYear: 'yyyy',
+		startingDay: 1,
+		"min-date": new Date().setMonth(today.getMonth() - 1)
+	};
+}]);
+
+
+rdsApp.controller('BigImagePopupWindowController', function ($scope, $modalInstance, imagePath) {
+	$scope.imagePath = imagePath;
+
+	$scope.closePopup = function () {
+		$modalInstance.close();
+	};
+});
+
+rdsApp.controller('MissingVATNumberPopupWindowController', function ($scope, $modalInstance, settingsService, vatService, callback) {
+
+	$scope.callback = callback;
+	$scope.vatNumber;
+
+
+	$scope.save = function () {
+		jQuery("body").busyWithSpecificMessage("Updating VAT Number ...");
+		var promise = vatService.updateVat(
+			site_code,
+			settingsService.settings.customer.environmentCode,
+			settingsService.settings.customer.number,
+			$scope.vatNumber.replace(/ /g, ""));
+
+		promise.then(
+			function (data) {
+				settingsService.settings.customer.vatNumber = $scope.vatNumber;
+				$scope.close();
+				callback.call(this);
+				jQuery("body").endBusy();
+			},
+			function (data) {
+				vatService.sendErrorMail(data.data);
+				jQuery("body").endBusy();
+			});
+	};
+
+	$scope.close = function () {
+		$modalInstance.close();
+	};
+});
+
+rdsApp.directive('scrollElement', function ($timeout) {
+	return {
+		link: function (scope, element, attrs) {
+			element.bind('click', function () {
+				$timeout(function () {
+					var elementToScrollTo = document.getElementById(attrs.scrollElement);
+					if (elementToScrollTo)
+						elementToScrollTo.scrollIntoView(true);
+				});
+			});
+		}
+	};
+});

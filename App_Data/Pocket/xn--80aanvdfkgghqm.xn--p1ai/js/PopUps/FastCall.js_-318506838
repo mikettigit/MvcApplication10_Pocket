@@ -1,0 +1,149 @@
+
+jQuery(document).ready(function($) {
+
+var interval=20000;
+
+	$('#clbh_phone_div').hover(function(){ $(this).toggleClass('hover'); });	    	
+	    setInterval(function(){ $('#clbh_phone_div').toggleClass('static'); }, interval);
+	$(window).scroll(function () { 
+		if ($(document).scrollTop() >= 0) {$('.cbh-phone').fadeIn('slow');} else { $('.cbh-phone').fadeOut('slow'); } 
+	});
+
+	var $popup = $('div.modal-recal');
+	var $vote_pp = $('div#mngr-answr');
+
+	$('div#clbh_phone_div').click(function(){
+
+		fadePp($popup);
+	});
+			
+	$popup.click(function(e){
+		if ( e.target == this )
+		fadePp($popup);
+	});
+
+	$vote_pp.click(function(e){
+		if ( e.target == this )
+		fadePp($vote_pp);
+	});
+
+
+	$popup.find('[type="submit"]').click(function(){	
+
+		if ( CheckImpts($popup) == false ) return false;
+		sendClickCall($popup,$vote_pp);
+		return false;
+	});
+
+
+	$vote_pp.find('button').click(function(){
+
+		var $v = $(this).html();
+		var $phone = $popup.find('input[type="text"]').val() 
+		FcVote($v,$phone,$vote_pp);
+		return false;
+	});	
+
+
+	CallStat();	
+
+});
+
+
+
+function sendClickCall($popup,$vote_pp){
+
+	phone_number = $popup.find('input[type="text"]').val();	
+
+	clickcall(phone_number,function(callback){
+
+			setTimeout( function() {							
+
+			var $submit = $popup.find('[type="submit"]');
+			var $stat_1 = $popup.find('span#stat_1');
+			var $stat_2 = $popup.find('span#stat_1');
+			var $timer = $popup.find('.timer');
+
+			$submit.addClass('ticketsend');
+			$submit.attr("disabled", "disabled");
+			$stat_1.html(parseInt($stat_1.html()) - 1);				
+			$stat_2.html(parseInt($stat_2.html()) + 1);				
+			$popup.find('.timer').css({'color':'#2B69C8'});	
+
+			countdown (5,$timer,function(){ 
+				
+				fadePp($popup); setTimeout(function(){ fadePp($vote_pp); } , 1000);
+			});
+			
+			} , 1000 );
+
+	});
+	                                          	
+}
+
+
+function CallStat () {
+
+	$.post('/js/PopUps/FastCallPopUp_Stat.php', {
+
+	//	param: param
+
+	}, function(data) {
+	
+		ddata = jQuery.parseJSON(data);
+		$('span#stat_1').html(ddata.online);	
+		$('span#stat_2').html(ddata.busy);
+		$('span#stat_3').html(ddata.catered);
+	});
+
+}
+
+var FcVote = function ($v,$phone,$vote_pp) {
+
+	console.log('vote');
+
+	$.post('/js/PopUps/FastCallFb.php', {
+
+		zn: $v,
+		phone: $phone
+
+	}, function(data) {
+	
+		ddata = jQuery.parseJSON(data);		
+		
+		if (ddata.success == 'send') {
+
+			$thx_div = $vote_pp.find('.thnaks-answ');
+			$thx_div.fadeIn('slow');                      				
+			$vote_pp.find('button')
+			.attr('disabled','disabled');
+
+			setTimeout( function() { fadePp($vote_pp); } , 3000);			
+		}
+	});
+	
+}
+
+
+var countdown = function (sec,$timer,callback){
+
+	var i_sec = setInterval(function(){
+		--sec;
+		var ms=100;	
+		var i_ms = setInterval(function(){
+			--ms;		
+
+			if (ms < 10) var m_ms = '0' + ms; else var m_ms = ms;
+			if (sec < 10) var m_sec = '0' + sec; else var m_sec = sec;
+
+			$timer.html('00:' + m_sec + ',' + m_ms);
+			if (ms == 0) clearInterval(i_ms);
+						
+		},10);
+
+		if (sec == 0) { 		
+			clearInterval(i_sec);
+			var i_cb = setInterval(function(){ callback(); clearInterval(i_cb);}, 1000); 			
+		}
+	},1000);
+}

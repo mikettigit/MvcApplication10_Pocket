@@ -1,0 +1,74 @@
+$(function(){
+
+$("#callmeform-director .btn-director").mouseover(function(){ //обработка прозрачности кнопки
+	$(this).css({ opacity: 0.9 });
+}).mouseleave(function(){
+	$(this).css({ opacity: 1 });
+});
+
+$(".callme_viewform-director").click(function(){
+	callmeShowFormdirector();
+});
+
+$("#cme_cls-director").click(function(){//кнопка "закрыть" 
+	callmeShowFormdirector();
+}).mouseover(function(){
+	$(this).css({ opacity: 0.8 });
+}).mouseleave(function(){
+	$(this).css({ opacity: 1 });
+});
+
+$("#viewform-director").hover(function(){ 
+	$(this).addClass("callmeform_hover-director");
+},function(){
+	$(this).removeClass("callmeform_hover-director");
+}
+
+);
+});
+
+function callmeShowFormdirector(){ //скрываем и показываем форму
+	$("#callmeform-overlay-director").fadeToggle("fast");
+	$("#callme_result-director").html("");
+}
+
+function sendMaildirector() {
+	var cnt = $.Storage.get('callme-sent'); //getting last sent time from storage
+	if (!cnt) { cnt = 0; }
+	
+	$.post("/callme-director/index.php", {
+		caddress: $("#caddress-director").val(), 
+		ccontract: $("#ccontract-director").val(),
+		cemail: $("#cemail-director").val(), 
+		ccmnt: $("#ccmnt-director").val(), 
+		ctime: cnt, 
+		url: location.href 
+	}, function(data) {	
+		message = "<div class='" + data.cls + "'>" + data.message +"</div>";
+		$("#callme_result-director").html(message);
+		
+		if (data.result == "success") {
+			$.Storage.set("callme-sent", data.time);
+			$("#callmeform-director .btn-director").attr("disabled", "disabled");
+			setTimeout( function(){ callmeShowFormdirector(); }, 1500);
+			setTimeout( function(){ $("#callmeform-director .txt-director").val(""); }, 2000);
+		}
+	},"json");
+}
+
+$(document).ready(function(){
+
+$("#callmeform-director .btn-director").click(function(){
+	$("#callme_result-director").html("<div class='sending'>Отправка...</div>");
+	setTimeout( function(){ sendMaildirector(); }, 2000);
+	return false;
+});	
+});
+
+$(document).keyup(function(a) { //обработка esc
+	if (a.keyCode == 27) {
+		if($("#callmeform-director").is(":visible")) {
+			callmeShowFormdirector();
+		}
+	}
+});

@@ -1,0 +1,15 @@
+/* $(document).ready(function(){
+
+	$.ajax({
+    type: 'POST',
+    url: 'http://oknaklv.com/include/allow_access.php',
+    crossDomain: true,
+    success: function(responseData, textStatus, jqXHR) {
+			$('.cross-domain-mode-sale_size').html(responseData);
+    },
+    error: function (responseData, textStatus, errorThrown) {
+			console.log('POST failed.');
+    }
+	});
+
+}); */

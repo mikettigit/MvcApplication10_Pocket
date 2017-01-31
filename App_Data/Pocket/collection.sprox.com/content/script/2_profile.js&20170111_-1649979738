@@ -1,0 +1,105 @@
+// directive to be able to compare the passwords.
+// The build in match is not working
+rdsApp.directive('pwCheck', [function () {
+	return {
+		require: 'ngModel',
+		link: function (scope, elem, attrs, ctrl) {
+			var firstPassword = '#' + attrs.pwCheck;
+			elem.on('keyup', function () {
+				scope.$apply(function () {
+					var v = elem.val() === jQuery(firstPassword).val();
+					ctrl.$setValidity('pwmatch', v);
+				});
+			});
+		}
+	}
+}]);
+
+rdsApp.service("profileService", function ($http, $modal, $log, settingsService) {
+	var service = this;
+	service.conditions = [];
+    service.customer = {};
+
+    service.getProfile = function() {
+    	if(settingsService.isAgent())
+    		return;
+    	
+        jQuery("body").busy();
+        var promise = settingsService.getCustomer();
+        promise.then(
+            function(data) {
+                service.customer = data.data;
+                jQuery("body").endBusy();
+            },
+            function(error) {
+
+                jQuery("body").endBusy();
+            }
+        );
+    };
+
+	service.openProfileUpdateSuccess = function () {
+		$modal.open({
+			templateUrl: '/messagePopup.inline',
+			controller: 'PopupWindowController',
+			size: 255
+		});
+	};
+
+	service.openChangePassword = function () {
+		$modal.open({
+			templateUrl: '/changePasswordPopup.inline',
+			controller: 'PopupWindowController',
+			size: 255
+		});
+	};
+
+	service.getConditions = function (customer, environmentCode) {
+		if (customer && window.location.search.indexOf("noheartbeattrigger") == -1) {
+			 return $http.get('/action/' + site_code + '/' + language + '/profile/' + customer + '/' + environmentCode + '/conditions?timestamp=' + new Date().getTime()).then(function (response) {
+				service.conditions = response.data;
+			});
+		} else {
+			$log.warn("Cannot get conditions for customer: ", customer);
+		}
+	}
+});
+
+rdsApp.controller("ProfileController", ['$scope', '$http', 'profileService', 'settingsService', function ($scope, $http, profileService, settingsService) {
+	$http.get('/action/' + site_code + '/' + language + '/profile/countries').then(function (response) {
+		$scope.countries = response.data;
+	});
+
+	
+	profileService.getProfile();
+
+	$scope.updateProfile = function (customer) {
+		jQuery("div.currentInfo").busy();
+		$http.post('/action/' + site_code + '/' + language + '/profile/updateUser', customer).success(function (data) {
+			jQuery("div.currentInfo").endBusy();
+
+			profileService.openProfileUpdateSuccess();
+		});
+	};
+
+    $scope.getProfileService = function() {
+        return profileService;
+    };
+    
+    $scope.responsibilitySelected = function(user) {
+		if(!user.responsible)
+			return false;
+		
+		user.responsible[""] = false;
+		
+		var keys = Object.keys(user.responsible);
+		for(var i = 0; i < keys.length; i++) {
+			if(user.responsible[keys[i]])
+				return true;
+		}
+		
+		return false;
+	}
+}]);
+
+

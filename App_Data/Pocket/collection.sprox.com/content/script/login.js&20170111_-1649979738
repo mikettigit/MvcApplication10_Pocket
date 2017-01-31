@@ -1,0 +1,303 @@
+
+
+
+rdsApp.directive('confirmValidation', function() {
+    return {
+        // restrict to an attribute type.
+        restrict: 'A',
+
+        // element must have ng-model attribute.
+        require: 'ngModel',
+        
+        // scope = the parent scope
+        // elem = the element the directive is on
+        // attr = a dictionary of attributes on the element
+        // ctrl = the controller for ngModel.
+        link: function(scope, elem, attrs, ctrl) {
+        	// set up a watch to watch the equality of the two scope properties
+            scope.$watch(function(){   
+               return scope.$eval(attrs["confirmValidation"]) == ctrl.$viewValue; //only 1 place to check if they are equal
+            }, function (newValue) {
+            	ctrl.$setValidity("confirmed", newValue);
+            });
+        }
+    };
+});
+
+rdsApp.directive('captchaValidation', function(loginService) {
+    return {
+        // restrict to an attribute type.
+        restrict: 'A',
+
+        // element must have ng-model attribute.
+        require: 'ngModel',
+        
+        // scope = the parent scope
+        // elem = the element the directive is on
+        // attr = a dictionary of attributes on the element
+        // ctrl = the controller for ngModel.
+        link: function(scope, elem, attrs, ctrl) {
+        	// set up a watch to watch the equality of the two scope properties
+            scope.$watch(function(){   
+            	var val = ctrl.$viewValue;
+            	if (val) {
+            		return loginService.captchaString == val.toUpperCase(); //only 1 place to check if they are equal
+            	} else {
+            		return false;
+            	}
+            }, function (newValue) {
+            	ctrl.$setValidity("captcha", newValue);
+            });
+        }
+    };
+});
+
+rdsApp.config(function($routeProvider, $locationProvider) {
+	$routeProvider
+	.when('', {
+		templateUrl: '/content/account/login.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/', {
+		templateUrl: '/content/account/login.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/login', {
+		templateUrl: '/content/account/login.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/register-2', {
+		templateUrl: '/content/account/register-2.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/register-3', {
+		templateUrl: '/content/account/register-3.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/registerAlreadyKnown', {
+		templateUrl: '/content/account/registerAlreadyKnown.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/agentAccept', {
+		templateUrl: '/content/account/agentAccept.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/registration-done', {
+		templateUrl: '/content/account/registrationDone.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/agentReject', {
+		templateUrl: '/content/account/agentReject.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/forgotPassword', {
+		templateUrl: '/content/account/forgotPassword.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/forgotPasswordConfirm', {
+		templateUrl: '/content/account/forgotPasswordConfirm.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/resetPassword', {
+		templateUrl: '/content/account/resetPassword.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	})
+	.when('/resetPasswordConfirm', {
+		templateUrl: '/content/account/resetPasswordConfirm.html',
+		controller: 'LoginController',
+		controllerAs: 'loginCtrl'
+	});
+});
+
+rdsApp.service("loginService", function($http, $location, $rootScope){
+	var timestamp = new Date().getTime();
+	var loginService = this;
+	loginService.user = {};
+	this.countries = [];
+	this.captchaString = "";
+
+	$http.get('/action/' + site_code + '/' + language + '/profile/countries?timestamp=' + new Date().getTime()).success(function(data) {
+		loginService.countries = data;
+	});
+
+	loginService.register1 = function(user) {
+		$http.post('/action/' + site_code + '/' + language + '/profile/registerStep1',user).success(function(response) {
+			if (response) {
+				$location.path("/register-2");
+				loginService.user = response;
+			} else {
+				loginService.user = user;
+				$location.path("/registerAlreadyKnown");
+			}
+			$rootScope.$broadcast("userUpdated");
+		}).
+		error(function(data, status, headers, config) {
+			jQuery.showError(data.message);
+		});
+	};
+
+	loginService.reloadCaptcha = function() {
+		loginService.captchaString = randString(5).toUpperCase();
+		jQuery("img#captchaImage").attr("src","/captcha.php?captcha=" + loginService.captchaString);
+		jQuery("input#realCaptcha").val(loginService.captchaString);
+	};
+
+	function randString(n)
+	{
+	    if(!n)
+	    {
+	        n = 5;
+	    }
+
+	    var text = '';
+	    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+	    for(var i=0; i < n; i++)
+	    {
+	        text += possible.charAt(Math.floor(Math.random() * possible.length));
+	    }
+
+	    return text;
+	}
+});
+
+rdsApp.controller('LoginController', ['$scope','loginService','$location','$routeParams','$route','$modal','$timeout','$http', 'cartService',function ($scope, loginService, $location, $routeParams, $route, $modal, $timeout, $http, cartService) {
+	$scope.user = loginService.user;
+	$scope.customer = undefined;
+	
+	
+	
+	if ($location.path() === "/login" || $location.path() === "/") {
+		
+	} else if ($location.path() === "/register-2") {
+		if (!$scope.user || angular.equals({}, $scope.user)) {
+
+			$http.get('/action/' + site_code + '/' + language + '/profile/customer/' + $location.search().user + "/" + $location.search().hash + "?timestamp=" + new Date().getTime()).success(function(data) {
+				loginService.user = data;
+				$scope.user = data;
+			});
+		} else {
+		}
+	} else if ($location.path() === "/agentAccept") {
+		var user = {};
+		user.user = $location.search().user; 
+		user.hash = $location.search().hash; 
+		$http.post('/action/' + site_code + '/' + language + '/profile/acceptProfile', user).success(function(data, status, headers, config) {
+			$scope.customer = data;		  
+		});
+	} else if ($location.path() === "/agentReject") {
+		var user = {};
+		user.user = $location.search().user; 
+		user.hash = $location.search().hash; 
+		$http.post('/action/' + site_code + '/' + language + '/profile/rejectProfile', user).success(function(data, status, headers, config) {
+			$scope.customer = data;		  
+		});
+	} else if ($location.path() === "/register-3") {
+		loginService.reloadCaptcha();
+	} else if ($location.path() === "/registration-done") {
+	} else {
+	}
+	
+	
+	$scope.loginError = function () {
+        return $location.search().login_error != undefined;
+    };
+	
+	$scope.loginErrorCode = function () {
+        return $location.search().login_error;
+    };
+	
+	$scope.getCartService = function () {
+        return cartService;
+    };
+
+	$scope.$on('userUpdated', function() {
+		$scope.user = loginService.user;
+	});
+
+	
+	$scope.register1 = function (user) {
+        if ($scope.register1Form.$valid) {
+            loginService.register1($scope.user);
+        }
+    };
+	
+	$scope.register2 = function (user) {
+        if ($scope.register2Form.$valid) {
+            $location.path("/register-3");
+        }
+    };
+	
+	$scope.register3 = function (user) {
+        if ($scope.register3Form.$valid) {
+            $http.post('/action/' + site_code + '/' + language + '/profile/registerUser', user).success(function (response) {
+                $location.path("/registration-done");
+            }).
+                error(function (data, status, headers, config) {
+                    jQuery.showError(data.message);
+                });
+        }
+    };
+	
+	$scope.getLoginService = function () {
+        return loginService;
+    };
+	
+	$scope.reloadCaptcha = function(){
+		loginService.reloadCaptcha();
+	};
+	
+	$scope.forgotPassword = function() {
+		if ($scope.forgotPasswordForm.$valid) {
+			var userData = {};
+			userData.email = $scope.forgotPasswordEmail;
+			$http.post('/action/' + site_code + '/' + language + '/profile/forgotPassword',userData).success(function(response) {
+				$location.path("/forgotPasswordConfirm");
+			}).
+			error(function(data, status, headers, config) {
+				jQuery.showError(data.message);
+			});
+		}
+	};
+	
+	$scope.forgotPasswordChange = function () {
+        if ($scope.forgotChangePasswordForm.$valid) {
+            var userData = {};
+            userData.password = $scope.resetPassword;
+            userData.user = $location.search().user;
+            userData.hash = $location.search().hash;
+
+            $http.post('/action/' + site_code + '/' + language + '/profile/forgotChangePassword', userData).success(function (response) {
+                $location.path("/login");
+            }).
+                error(function (data, status, headers, config) {
+                    jQuery.showError(data.message);
+                });
+        }
+    };
+	
+	$scope.responsibilitySelected = function(user) {
+		if(!user.responsible)
+			return false;
+		
+		var keys = Object.keys(user.responsible);
+		for(var i = 0; i < keys.length; i++) {
+			if(user.responsible[keys[i]])
+				return true;
+		}
+		
+		return false;
+	}
+}]);

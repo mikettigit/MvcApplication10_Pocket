@@ -1,0 +1,2 @@
+Cufon.replace('h3', { fontFamily: 'Arial', textShadow: '2px 2px #d3c211' });
+Cufon.replace('.site-nav ul li, h4', { fontFamily: 'Arial' });
