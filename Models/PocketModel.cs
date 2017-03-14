@@ -210,17 +210,26 @@ namespace MvcApplication10.Models
             result = CurrentPocketFolderPath + uri.PathAndQuery;
             if (isContent)
             {
-                result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + uri.Host;
+                result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + uri.Host + ".htm";
             }
             else {
                 result = result.Trim('/');
             }
+            result = result.Replace('/', '\\');
+            result = result.Replace('?', '&');
+
+            string FileExtention = Path.GetExtension(result);
+            string FileName = Path.GetFileNameWithoutExtension(result);
+            string FilePath = Path.GetDirectoryName(result);
+
+            result = FilePath + "\\" + FileName;
+
             if (isHashed)
             {
                 result = result + "_" + ReplacementModel.Hash.ToString();
             }
-            result = result.Replace('/', '\\');
-            result = result.Replace('?', '&');
+
+            result = result + FileExtention;
 
             return result;
         }
@@ -324,9 +333,6 @@ namespace MvcApplication10.Models
             {
                 if (!isFromSample)
                 {
-                    if (!isJsOrCss) { 
-                        result = EnhanceModel.Enhance(result);
-                    }
                     if (CacheMode)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
@@ -335,6 +341,9 @@ namespace MvcApplication10.Models
                 }
 
                 if (!String.IsNullOrWhiteSpace(ReplacementModel.Hash)) {
+                    if (!isJsOrCss) { 
+                        result = EnhanceModel.Enhance(result);
+                    }
                     result = ReplacementModel.Replace(result);
                     if (CacheMode)
                     {
