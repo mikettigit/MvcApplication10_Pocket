@@ -257,7 +257,7 @@ namespace MvcApplication10.Models
     
                 DirectoryInfo dInfo = Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-                var SearchPattern = new Regex(@"^(" + Path.GetFileName(path).Replace(ReplacementModel.Hash.ToString(), "") + @")(?!.*?\.(config|log)$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                var SearchPattern = new Regex(@"^(" + Path.GetFileName(path).Replace(ReplacementModel.Hash.ToString(), ").*(") + @")(?!.*?\.(config|log)$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
                 var filenames = dInfo.GetFiles().Where(f => SearchPattern.IsMatch(f.Name));
                 foreach (var filename in filenames)
@@ -285,6 +285,8 @@ namespace MvcApplication10.Models
             string SampleFilepath = "";
             bool isFromSample = false;
 
+            Encoding encoding = Encoding.UTF8;
+
             if (CacheMode)
             {
                 InstanceFilepath = GetPocketFilePath(path, !isJsOrCss, true);
@@ -306,6 +308,7 @@ namespace MvcApplication10.Models
                 if (!locked)
                 {
                     MemoryStream = GetStreamFromResponse(path);
+                    //encoding = Encoding.GetEncoding("windows-1251");
                 }
                 else
                 {
@@ -326,7 +329,7 @@ namespace MvcApplication10.Models
                 }
             }
 
-            StreamReader MemoryStreamReader = new StreamReader(MemoryStream);
+            StreamReader MemoryStreamReader = new StreamReader(MemoryStream, encoding);
             result = MemoryStreamReader.ReadToEnd();
 
             if (IsFromResponse || isFromSample)
