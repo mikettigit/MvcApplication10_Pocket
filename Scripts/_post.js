@@ -21,7 +21,7 @@
 
     });
 
-    if (jQuery) {
+    if (jQuery && jQuery.ajaxPrefilter) {
         jQuery.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 
             jqXHR.abort();
