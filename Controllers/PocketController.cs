@@ -102,6 +102,15 @@ namespace MvcApplication10.Controllers
         [AcceptVerbs(HttpVerbs.Get)]
         public ActionResult Index()
         {
+            var NameValueCollection = HttpUtility.ParseQueryString(Request.QueryString.ToString());
+            foreach (string _key in NameValueCollection.AllKeys) {
+                if (_key.Contains("utm_") || _key.Contains("_openstat")){
+                    NameValueCollection.Remove(_key);            
+                }
+            }
+            string RequestQueryString = (NameValueCollection.Count > 0) ? "?" + NameValueCollection.ToString() : "";
+            string RequestPath = String.Format("{0}{1}", Request.Url.AbsolutePath, RequestQueryString);
+
             string ContentType = MimeMapping.GetMimeMapping(Request.Path).ToLower();
             if ((ContentType == "application/octet-stream"
                     || ContentType == "text/html")
@@ -118,7 +127,7 @@ namespace MvcApplication10.Controllers
                 }
                 else
                 {
-                    string content = Pocket.GetContent(Request.Url, false);
+                    string content = Pocket.GetContent(RequestPath, false);
 
                     foreach (var ControlName in SharedControls)
                     {
@@ -134,7 +143,7 @@ namespace MvcApplication10.Controllers
                 string content = "";
                 if (Pocket != null)
                 {
-                    content = Pocket.GetContent(Request.Url, true);
+                    content = Pocket.GetContent(RequestPath, true);
                 }
                 return new FileContentResult(Encoding.UTF8.GetBytes(content), ContentType);
             }
@@ -143,7 +152,7 @@ namespace MvcApplication10.Controllers
                 Stream Stream = new MemoryStream();
                 if (Pocket != null)
                 {
-                    Stream = Pocket.GetSourceFileStream(Request.Url);
+                    Stream = Pocket.GetSourceFileStream(RequestPath);
                 }
                 return new FileStreamResult(Stream, ContentType);
             }

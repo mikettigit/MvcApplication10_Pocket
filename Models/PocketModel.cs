@@ -275,9 +275,8 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string GetContent(Uri url, bool isJsOrCss)
+        public string GetContent(string path, bool isJsOrCss)
         {
-            string path = String.Format("{0}{1}", url.AbsolutePath, url.Query);
             string result = "";
 
             MemoryStream MemoryStream = new MemoryStream();
@@ -308,15 +307,7 @@ namespace MvcApplication10.Models
                 if (!locked)
                 {
                     MemoryStream = GetStreamFromResponse(path);
-                    encoding = Encoding.GetEncoding("windows-1251");
-                }
-                else
-                {
-                    if (!String.IsNullOrEmpty(url.Query))
-                    {
-                        Uri NonQueryUrl = new Uri(String.Format("{0}{1}{2}{3}", url.Scheme, Uri.SchemeDelimiter, url.Authority, url.AbsolutePath));
-                        return GetContent(NonQueryUrl, isJsOrCss);
-                    }
+                    //encoding = Encoding.GetEncoding("windows-1251");
                 }
                 IsFromResponse = true;
                 if (CacheMode)
@@ -336,7 +327,7 @@ namespace MvcApplication10.Models
             {
                 if (!isFromSample)
                 {
-                    if (CacheMode)
+                    if (CacheMode && !locked)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
                         SetStreamToPocket(new MemoryStream(byteArray), SampleFilepath);
@@ -348,7 +339,7 @@ namespace MvcApplication10.Models
                         result = EnhanceModel.Enhance(result);
                     }
                     result = ReplacementModel.Replace(result);
-                    if (CacheMode)
+                    if (CacheMode && !locked)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
                         SetStreamToPocket(new MemoryStream(byteArray), InstanceFilepath);
@@ -359,10 +350,8 @@ namespace MvcApplication10.Models
             return result;
         }
 
-        public MemoryStream GetSourceFileStream(Uri url)
+        public MemoryStream GetSourceFileStream(string path)
         {
-            string path = String.Format("{0}{1}", url.AbsolutePath, url.Query);
-
             MemoryStream MemoryStream = new MemoryStream();
             string InstanceFilepath = "";
 
@@ -379,14 +368,6 @@ namespace MvcApplication10.Models
                 {
                     MemoryStream = GetStreamFromResponse(path);
                 }
-                else
-                {
-                    if (!String.IsNullOrEmpty(url.Query))
-                    {
-                        Uri NonQueryUrl = new Uri(String.Format("{0}{1}{2}{3}", url.Scheme, Uri.SchemeDelimiter, url.Authority, url.AbsolutePath));
-                        return GetSourceFileStream(NonQueryUrl);
-                    }
-                }
                 IsFromResponse = true;
                 if (CacheMode)
                 {
@@ -398,7 +379,7 @@ namespace MvcApplication10.Models
                 }
             }
 
-            if (CacheMode && IsFromResponse)
+            if (CacheMode && IsFromResponse && !locked)
             {
                 SetStreamToPocket(MemoryStream, InstanceFilepath);
             }
