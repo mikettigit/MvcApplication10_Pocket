@@ -1,6 +1,6 @@
 ﻿jQuery_pocket(document).ready(function () {
 
-    jQuery_pocket("form").submit(function (e) {
+    jQuery_pocket(document).on("submit", "form", function (e) {
 
         e.preventDefault();
         
