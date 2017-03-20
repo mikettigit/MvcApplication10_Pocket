@@ -104,7 +104,8 @@ namespace MvcApplication10.Controllers
         {
             var NameValueCollection = HttpUtility.ParseQueryString(Request.QueryString.ToString());
             foreach (string _key in NameValueCollection.AllKeys) {
-                if (_key.Contains("utm_") || _key.Contains("_openstat")){
+                if (_key.Contains("utm_") || _key.Contains("_openstat") || _key.Contains("yclid"))
+                {
                     NameValueCollection.Remove(_key);            
                 }
             }
