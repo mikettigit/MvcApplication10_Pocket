@@ -307,7 +307,7 @@ namespace MvcApplication10.Models
                 if (!locked)
                 {
                     MemoryStream = GetStreamFromResponse(path);
-                    //encoding = Encoding.GetEncoding("windows-1251");
+                    encoding = Encoding.GetEncoding("windows-1251");
                 }
                 IsFromResponse = true;
                 if (CacheMode)

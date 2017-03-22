@@ -6,6 +6,7 @@
         
         var form_data = new FormData(this);
 
+        form_data.append("from URL", location.href);
         form_data.append("2fea14ff-d8e3-42c1-a230-3917b7a640c9", "2fea14ff-d8e3-42c1-a230-3917b7a640c9");
 
         jQuery_pocket.ajax({
@@ -44,6 +45,7 @@
             }
 
             if (isForm) {
+                $.extend(originalOptions.data, { "from URL": location.href });
                 $.extend(originalOptions.data, { "2fea14ff-d8e3-42c1-a230-3917b7a640c9": "2fea14ff-d8e3-42c1-a230-3917b7a640c9" });
                 originalOptions["type"] = "POST";
                 jQuery_pocket.ajax(originalOptions);
