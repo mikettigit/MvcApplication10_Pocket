@@ -122,6 +122,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\JsonMessage.cs" />
+    <Compile Include="Helpers\Resizer.cs" />
     <Compile Include="Helpers\SessionManager.cs" />
     <Compile Include="Models\EnhanceModel.cs" />
     <Compile Include="Models\PocketModel.cs" />
