@@ -1,22 +1,43 @@
-﻿jQuery_pocket(document).ready(function () {
+﻿var pocket_guid = "2fea14ff-d8e3-42c1-a230-3917b7a640c9";
+
+jQuery_pocket(document).ready(function () {
+
+    var onsubmitname = "onsubmit_" + pocket_guid;
+    jQuery_pocket("form").each(function() {
+        $(this).attr(onsubmitname, $(this).attr("onsubmit")).removeAttr("onsubmit");
+    })
 
     jQuery_pocket(document).on("submit", "form", function (e) {
 
         e.preventDefault();
         
-        var form_data = new FormData(this);
+        fault = false;
 
-        form_data.append("from URL", location.href);
-        form_data.append("2fea14ff-d8e3-42c1-a230-3917b7a640c9", "2fea14ff-d8e3-42c1-a230-3917b7a640c9");
+        var code = jQuery(this).attr(onsubmitname);
+        if (code) {
+            this[onsubmitname] = function () {
+                return new Function(code)();
+            }
+            if (this[onsubmitname]() == false) {
+                fault = true;
+            }
+        }
 
-        jQuery_pocket.ajax({
-            url: "/Pocket/Index",
-            data: form_data,
-            cache: false,
-            contentType: false,
-            processData: false,
-            type: 'POST'
-        });
+        if (!fault) {
+            var form_data = new FormData(this);
+
+            form_data.append("from URL", location.href);
+            form_data.append(pocket_guid, pocket_guid);
+
+            jQuery_pocket.ajax({
+                url: "/Pocket/Index",
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST'
+            });
+        }
 
         return false;
 
@@ -46,7 +67,7 @@
 
             if (isForm) {
                 $.extend(originalOptions.data, { "from URL": location.href });
-                $.extend(originalOptions.data, { "2fea14ff-d8e3-42c1-a230-3917b7a640c9": "2fea14ff-d8e3-42c1-a230-3917b7a640c9" });
+                $.extend(originalOptions.data, { pocket_guid: pocket_guid });
                 originalOptions["type"] = "POST";
                 jQuery_pocket.ajax(originalOptions);
             }
@@ -55,10 +76,8 @@
     }
 
     jQuery_pocket(document).ajaxSuccess(function (event, xhr, settings) {
-        if (settings.url.toLowerCase() != "/pocket/getconfig") {
-            data = JSON.parse(xhr.responseText);
-            alert(data.Message);
-        }
+        data = JSON.parse(xhr.responseText);
+        alert(data.Message);
     });
 
 });
