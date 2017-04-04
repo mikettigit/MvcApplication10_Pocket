@@ -44,7 +44,7 @@ namespace MvcApplication10.Models
             if (xConfiguration != null)
             {
                 XElement xReplacementModel = xConfiguration.Element(XName.Get("ReplacementModel"));
-                Hash = xReplacementModel.Value.GetHashCode().ToString() + "_" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+                Hash = xReplacementModel.Value.GetHashCode().ToString();
                 IEnumerable<XElement> xReplacements = xReplacementModel.Elements(XName.Get("Replacement"));
                 foreach (XElement xReplacement in xReplacements)
                 {
