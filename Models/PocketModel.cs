@@ -227,6 +227,11 @@ namespace MvcApplication10.Models
             if (isHashed)
             {
                 result = result + "_" + ReplacementModel.Hash.ToString();
+                string NonHashedPath = GetPocketFilePath(path, isContent, false);
+                if (File.Exists(NonHashedPath))
+                {
+                    result = result + "_" + File.GetLastWriteTime(NonHashedPath).GetHashCode().ToString();
+                }
             }
 
             result = result + FileExtention;
@@ -256,13 +261,17 @@ namespace MvcApplication10.Models
             {
     
                 DirectoryInfo dInfo = Directory.CreateDirectory(Path.GetDirectoryName(path));
-
-                var SearchPattern = new Regex(@"^(" + Path.GetFileName(path).Replace(ReplacementModel.Hash.ToString(), ").*(") + @")(?!.*?\.(config|log)$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-                var filenames = dInfo.GetFiles().Where(f => SearchPattern.IsMatch(f.Name));
-                foreach (var filename in filenames)
+                
+                string FileName = Path.GetFileName(path);
+                if (FileName.Contains(ReplacementModel.Hash))
                 {
-                    filename.Delete();
+                    var SearchPattern = new Regex(@"^(" + FileName.Substring(0, FileName.IndexOf(ReplacementModel.Hash)) + ")", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                    var filenames = dInfo.GetFiles().Where(f => SearchPattern.IsMatch(f.Name));
+                    foreach (var filename in filenames)
+                    {
+                        filename.Delete();
+                    }
                 }
 
                 using (var FileStream = new FileStream(path, FileMode.Create))
