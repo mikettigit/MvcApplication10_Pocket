@@ -11,33 +11,29 @@ jQuery_pocket(document).ready(function () {
 
         e.preventDefault();
         
-        fault = false;
-
         var code = jQuery(this).attr(onsubmitname);
         if (code) {
             this[onsubmitname] = function () {
                 return new Function(code)();
             }
             if (this[onsubmitname]() == false) {
-                fault = true;
+                return false;
             }
         }
 
-        if (!fault) {
-            var form_data = new FormData(this);
+        var form_data = new FormData(this);
 
-            form_data.append("from URL", location.href);
-            form_data.append(pocket_guid, pocket_guid);
+        form_data.append("from URL", location.href);
+        form_data.append(pocket_guid, pocket_guid);
 
-            jQuery_pocket.ajax({
-                url: "/Pocket/Index",
-                data: form_data,
-                cache: false,
-                contentType: false,
-                processData: false,
-                type: 'POST'
-            });
-        }
+        jQuery_pocket.ajax({
+            url: "/Pocket/Index",
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST'
+        });
 
         return false;
 
