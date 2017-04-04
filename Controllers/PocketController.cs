@@ -132,8 +132,11 @@ namespace MvcApplication10.Controllers
 
                     foreach (var ControlName in SharedControls)
                     {
-                        string template = RenderRazorViewToString(ControlName.Value, "");
-                        content = content.Replace("@" + ControlName.Key, template);
+                        if (content.Contains("@" + ControlName.Key))
+                        {
+                            string template = RenderRazorViewToString(ControlName.Value, "");
+                            content = content.Replace("@" + ControlName.Key, template);
+                        }
                     }
 
                     return Content(content);
