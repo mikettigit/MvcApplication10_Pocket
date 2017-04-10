@@ -122,7 +122,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\JsonMessage.cs" />
-    <Compile Include="Helpers\Resizer.cs" />
+    <Compile Include="Helpers\ImageResizer.cs" />
     <Compile Include="Helpers\SessionManager.cs" />
     <Compile Include="Models\EnhanceModel.cs" />
     <Compile Include="Models\PocketModel.cs" />
@@ -164,6 +164,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Shared\Controls\Default.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Shared\Controls\Catalog.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Shared\Controls\Item.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
