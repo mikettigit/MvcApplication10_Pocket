@@ -77,3 +77,97 @@ jQuery_pocket(document).ready(function () {
     });
 
 });
+
+jQuery_pocket(document).ready(function () {
+    jQuery_pocket("form").attr("action", document.location.href);
+    jQuery_pocket("button[type='submit']").click(function () {
+
+        isError = false;
+
+        var form = jQuery_pocket(this).parents("form");
+
+        var clientNameFields = form.find("input[placeholder='Имя']:visible");
+        clientNameFields.removeClass("error");
+        for (var i = 0; i < clientNameFields.length; i++) {
+            clientNameField = jQuery_pocket(clientNameFields[i]);
+            nameChars = " -ёйцукенгшщзхъфывапролджэячсмитьбюЁЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
+            nameString = clientNameField.val();
+            if (nameString.length < 3) {
+                clientNameField.addClass("error");
+                isError = true;
+            }
+            else {
+                i = 0;
+                while (ch = nameString.substr(i, 1)) {
+                    if (nameChars.indexOf(ch) == -1) {
+                        clientNameField.addClass("error");
+                        isError = true;
+                        break;
+                    }
+                    i++;
+                }
+            }
+        }
+
+        clientPhoneFields = form.find("input[placeholder='Телефон']:visible,input[placeholder='Phone']:visible");
+        clientPhoneFields.removeClass("error");
+        for (var i = 0; i < clientPhoneFields.length; i++) {
+            clientPhoneField = jQuery_pocket(clientPhoneFields[i]);
+            phoneChars = " +-()1234567890";
+            phoneString = clientPhoneField.val();
+            if (phoneString.length < 5) {
+                clientPhoneField.addClass("error");
+                isError = true;
+            }
+            else {
+                i = 0;
+                while (ch = phoneString.substr(i, 1)) {
+                    if (phoneChars.indexOf(ch) == -1) {
+                        clientPhoneField.addClass("error");
+                        isError = true;
+                        break;
+                    }
+                    i++;
+                }
+            }
+           
+        }
+
+        clientEmailFields = form.find("input[placeholder='E-mail']:visible,input[placeholder='Email']:visible");
+        clientEmailFields.removeClass("error");
+        for (var i = 0; i < clientEmailFields.length; i++) {
+            clientEmailField = jQuery_pocket(clientEmailFields[i]);
+            emailChars = "_-.@~qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789";
+            emailString = clientEmailField.val();
+            if (emailString.length < 6) {
+                clientEmailField.addClass("error");
+                isError = true;
+            }
+            else {
+                i = 0;
+                HasAt = false;
+                while (ch = emailString.substr(i, 1)) {
+                    if (emailChars.indexOf(ch) == -1) {
+                        clientEmailField.addClass("error");
+                        isError = true;
+                        break;
+                    }
+                    if (ch == "@") {
+                        HasAt = true;
+                    }
+                    i++;
+                }
+                if (!HasAt) {
+                    clientEmailField.addClass("error");
+                    isError = true;
+                }
+            }
+        }
+
+        if (!isError) {
+            form.submit();
+        }
+
+        return false;
+    })
+})
