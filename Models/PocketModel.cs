@@ -123,7 +123,13 @@ namespace MvcApplication10.Models
                     XElement xLocked = xConfiguration.Element(XName.Get("Locked"));
                     if (xLocked != null)
                     {
-                        locked = Convert.ToBoolean(xLocked.Value);
+                        if (!Boolean.TryParse(xLocked.Value, out locked))
+                        {
+                            DateTime LockedFrom = new DateTime();
+                            if (DateTime.TryParse(xLocked.Value, out LockedFrom)){
+                                locked = (DateTime.Now > LockedFrom);
+                            }
+                        }
                     }
                 }
                 else
