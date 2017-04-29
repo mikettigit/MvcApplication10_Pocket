@@ -7,6 +7,7 @@ using System.Web;
 using System.Xml;
 using System.Xml.Linq;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace MvcApplication10.Models
 {
@@ -327,11 +328,12 @@ namespace MvcApplication10.Models
                 IsFromResponse = true;
                 if (CacheMode)
                 {
-                    try
+                    if (File.Exists(LogFilePath)) 
                     {
-                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : "") + "\r\n"); 
+                        List<string> LogLines = File.ReadAllLines(LogFilePath).ToList();
+                        LogLines.Insert(0, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : ""));
+                        File.WriteAllLines(LogFilePath, LogLines.Take(300).ToArray());
                     }
-                    catch { }
                 }
             }
 
@@ -386,11 +388,12 @@ namespace MvcApplication10.Models
                 IsFromResponse = true;
                 if (CacheMode)
                 {
-                    try
+                    if (File.Exists(LogFilePath))
                     {
-                        File.AppendAllText(LogFilePath, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : "") + "\r\n");
+                        List<string> LogLines = File.ReadAllLines(LogFilePath).ToList();
+                        LogLines.Insert(0, DateTime.Now + "\t" + path + (locked ? "\t[locked]" : ""));
+                        File.WriteAllLines(LogFilePath, LogLines.Take(300).ToArray());
                     }
-                    catch { }
                 }
             }
 
