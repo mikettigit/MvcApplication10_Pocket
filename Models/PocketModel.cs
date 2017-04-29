@@ -25,6 +25,8 @@ namespace MvcApplication10.Models
 
         private bool locked;
 
+        private CookieContainer cookiecontainer;
+
         public string ServerDomainName
         {
             get {
@@ -112,6 +114,8 @@ namespace MvcApplication10.Models
             messageto = _messageto;
             locked = _locked;
 
+            cookiecontainer = new CookieContainer();
+
             XElement xConfiguration = null;
             if (CacheMode)
             {
@@ -179,6 +183,7 @@ namespace MvcApplication10.Models
             request.Method = "GET";
             request.Proxy.Credentials = CredentialCache.DefaultCredentials;
             request.ContentLength = 0;
+            request.CookieContainer = cookiecontainer;
 
             try
             {
@@ -214,7 +219,7 @@ namespace MvcApplication10.Models
 
             Uri uri = new Uri(sourceurl + path);
 
-            result = CurrentPocketFolderPath + uri.PathAndQuery;
+            result = CurrentPocketFolderPath + HttpUtility.UrlDecode(uri.PathAndQuery);
             if (isContent)
             {
                 result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + uri.Host + ".htm";
