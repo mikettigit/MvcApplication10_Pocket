@@ -184,12 +184,13 @@ namespace MvcApplication10.Models
             request.Proxy.Credentials = CredentialCache.DefaultCredentials;
             request.ContentLength = 0;
             request.CookieContainer = cookiecontainer;
+            request.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
             try
             {
                 return (HttpWebResponse)request.GetResponse();
             }
-            catch (Exception)
+            catch (Exception e)
             {
             }
 
