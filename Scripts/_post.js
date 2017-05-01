@@ -1,10 +1,15 @@
 ﻿var pocket_guid = "2fea14ff-d8e3-42c1-a230-3917b7a640c9";
 
+function getRandomInt(min, max) 
+{ 
+    return Math.floor(Math.random() * (max - min + 1)) + min; 
+} 
+
 jQuery_pocket(document).ready(function () {
 
     var onsubmitname = "onsubmit_" + pocket_guid;
     jQuery_pocket("form").each(function() {
-        $(this).attr(onsubmitname, $(this).attr("onsubmit")).removeAttr("onsubmit");
+        jQuery_pocket(this).attr(onsubmitname, jQuery_pocket(this).attr("onsubmit")).removeAttr("onsubmit");
     })
 
     jQuery_pocket(document).on("submit", "form", function (e) {
