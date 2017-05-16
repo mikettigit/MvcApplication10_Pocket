@@ -1,10 +1,5 @@
 ﻿var pocket_guid = "2fea14ff-d8e3-42c1-a230-3917b7a640c9";
 
-function getRandomInt(min, max) 
-{ 
-    return Math.floor(Math.random() * (max - min + 1)) + min; 
-} 
-
 jQuery_pocket(document).ready(function () {
 
     var onsubmitname = "onsubmit_" + pocket_guid;
@@ -67,8 +62,9 @@ jQuery_pocket(document).ready(function () {
             }
 
             if (isForm) {
-                $.extend(originalOptions.data, { "from URL": location.href });
-                $.extend(originalOptions.data, { pocket_guid: pocket_guid });
+                var extendOptions = {"from URL": location.href};
+                extendOptions["" + pocket_guid] = pocket_guid;
+                $.extend(originalOptions.data, extendOptions);
                 originalOptions["type"] = "POST";
                 jQuery_pocket.ajax(originalOptions);
             }
