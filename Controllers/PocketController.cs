@@ -163,7 +163,7 @@ namespace MvcApplication10.Controllers
                     {
                         if (content.Contains("@" + ControlName.Key))
                         {
-                            string template = RenderRazorViewToString(ControlName.Value, "");
+                            string template = RenderRazorViewToString(ControlName.Value, Pocket);
                             content = content.Replace("@" + ControlName.Key, template);
                         }
                     }
