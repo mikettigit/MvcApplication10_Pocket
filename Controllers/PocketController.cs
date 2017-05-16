@@ -19,6 +19,31 @@ namespace MvcApplication10.Controllers
         //
         // GET: /Pocket/
 
+        protected IEnumerable<string> ExceptQueryParams
+        {
+            get
+            {
+                IEnumerable<string> result = null;
+
+                SessionManager sm = new SessionManager();
+
+                object exceptQueryParams = sm.Get("exceptQueryParams");
+                if (exceptQueryParams != null)
+                {
+                    result = exceptQueryParams as IEnumerable<string>;
+                }
+                else
+                {
+                    string ExceptQueryParamsString = ConfigurationManager.AppSettings["ExceptQueryParams"];
+                    result = ExceptQueryParamsString.Split(new char[1] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                    sm.Set("exceptQueryParams", exceptQueryParams);
+                }
+
+                return result;
+            }
+        }
+
+
         protected PocketModel Pocket
         {
             get
@@ -103,10 +128,14 @@ namespace MvcApplication10.Controllers
         public ActionResult Index()
         {
             var NameValueCollection = HttpUtility.ParseQueryString(Request.QueryString.ToString());
-            foreach (string _key in NameValueCollection.AllKeys) {
-                if (_key.Contains("utm_") || _key.Contains("_openstat") || _key.Contains("yclid") || _key.Contains("spush"))
+            foreach (string _key in NameValueCollection.AllKeys)
+            {
+                foreach (string ExceptQueryParam in ExceptQueryParams)
                 {
-                    NameValueCollection.Remove(_key);            
+                    if (_key.Contains(ExceptQueryParam))
+                    {
+                        NameValueCollection.Remove(_key);
+                    }
                 }
             }
             string RequestQueryString = (NameValueCollection.Count > 0) ? "?" + NameValueCollection.ToString() : "";
