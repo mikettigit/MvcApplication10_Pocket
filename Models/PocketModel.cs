@@ -4,10 +4,10 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using System.Xml;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
+using MvcApplication10.Helpers;
 
 namespace MvcApplication10.Models
 {
@@ -144,7 +144,7 @@ namespace MvcApplication10.Models
                 }
             }
             ReplacementModel = new ReplacementModel(xConfiguration);
-            ReplacementModel.Items.Add(new Replacement(new Uri(sourceurl).Host, serverdomainname, "", true));
+            ReplacementModel.Items.Add(new Replacement(new Uri(sourceurl).Host, "", serverdomainname, "", true));
             
             EnhanceModel = new EnhanceModel(this);
         }
@@ -162,9 +162,11 @@ namespace MvcApplication10.Models
             xConfiguration.Add(xNotifications);
                 XElement xReplacementModel = new XElement("ReplacementModel");
                     XElement xReplacement = new XElement("Replacement");
-                        XAttribute xTarget = new XAttribute("target", "all");
+                        XAttribute xTarget = new XAttribute("target", "");
                         xReplacement.Add(xTarget);
                         XElement xWhat = new XElement("what");
+                            XAttribute xxPath = new XAttribute("xpath", "");
+                            xWhat.Add(xxPath);
                             xWhat.Add(new XCData(""));
                         xReplacement.Add(xWhat);
                         XElement xBy = new XElement("by");
@@ -342,7 +344,7 @@ namespace MvcApplication10.Models
                     }
                 }
             }
-
+            
             StreamReader MemoryStreamReader = new StreamReader(MemoryStream, encoding);
             result = MemoryStreamReader.ReadToEnd();
 
@@ -350,6 +352,10 @@ namespace MvcApplication10.Models
             {
                 if (!isFromSample)
                 {
+                    if (!isJsOrCss)
+                    {
+                        HtmlBeautifier.Proceed(ref result);
+                    }
                     if (CacheMode && !locked)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
@@ -358,10 +364,11 @@ namespace MvcApplication10.Models
                 }
 
                 if (!String.IsNullOrWhiteSpace(ReplacementModel.Hash)) {
-                    if (!isJsOrCss) { 
+                    if (!isJsOrCss) 
+                    { 
                         result = EnhanceModel.Enhance(result);
                     }
-                    result = ReplacementModel.Replace(result);
+                    result = ReplacementModel.Replace(result, path);
                     if (CacheMode && !locked)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);

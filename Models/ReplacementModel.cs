@@ -1,24 +1,25 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Web;
 using System.Xml.Linq;
+using MvcApplication10.Helpers;
 
 namespace MvcApplication10.Models
 {
     public class Replacement
     {
         public string what;
+        public string xpath;
         public string by;
         public string target;
         public bool predefined;
 
-        public Replacement(string _what, string _by, string _target, bool _predefined = false)
+        public Replacement(string _what, string _xpath, string _by, string _target, bool _predefined = false)
         {
             what = _what;
+            xpath = _xpath;
             by = _by;
             target = _target;
             predefined = _predefined;
@@ -48,81 +49,72 @@ namespace MvcApplication10.Models
                 IEnumerable<XElement> xReplacements = xReplacementModel.Elements(XName.Get("Replacement"));
                 foreach (XElement xReplacement in xReplacements)
                 {
-                    string what = xReplacement.Element(XName.Get("what")).Value;
+                    XElement xWhat = xReplacement.Element(XName.Get("what"));
+                    string what = xWhat.Value;
+                    string xpath = xWhat.Attribute(XName.Get("xpath")).Value;
                     string by = xReplacement.Element(XName.Get("by")).Value;
                     string target = xReplacement.Attribute(XName.Get("target")).Value;
-                    Items.Add(new Replacement(what, by, target));
+                    Items.Add(new Replacement(what, xpath, by, target));
                 }
             }
         }
 
-        public string Replace(string source)
+        public string Replace(string source, string target)
         {
-            return Replacement(source, false);
+            return Replacement(source, target, false);
         }
 
         public string Repair(string source)
         {
-            return Replacement(source, true);
+            return Replacement(source, source, true);
         }
 
-        private string Replacement(string source, bool repair)
+        private string Replacement(string source, string target, bool repair)
         {
             string result = String.Copy(source);
 
             foreach (Replacement item in Items)
             {
-                if (!String.IsNullOrEmpty(repair ? item.by : item.what))
+                if (repair && !item.xpath.IsEmpty())
                 {
-                    string CurrentWhat = Regex.Escape(repair ? item.by : item.what);
+                    continue;
+                }
 
-                    List<string> CurrentWhats = new List<string>();
+                if (item.target.IsEmpty() || item.target.Equals(target, StringComparison.OrdinalIgnoreCase))
+                {
+                    string CurrentWhat = repair ? item.by : item.what;
+                    string CurrentBy = repair ? item.what : item.by;
 
-                    if (item.target.ToLower() == "UpToClosingTag".ToLower())
+                    if (item.xpath.IsEmpty())
                     {
-                       try
-                       {
-                           HtmlDocument doc = new HtmlDocument();
-                           doc.LoadHtml(result);
-                           RecurseFindNodeTextsByOuterHtml(CurrentWhats, doc.DocumentNode, CurrentWhat);
-                       }
-                       finally
-                       {
-                       }
+                        if (!CurrentWhat.IsEmpty())
+                        {
+                            result = result.Replace(CurrentWhat, CurrentBy);
+                        }
                     }
-
-                    if (CurrentWhats.Count == 0)
+                    else
                     {
-                        CurrentWhats.Add(CurrentWhat);
+                        HtmlDocument doc = new HtmlDocument();
+                        doc.LoadHtml(result);
+                        var nodes = doc.DocumentNode.SelectNodes(item.xpath);
+                        foreach (var node in nodes)
+                        {
+                            string Pattern = CurrentBy;
+                            if (!CurrentWhat.IsEmpty())
+                            {
+                                Pattern = node.OuterHtml;
+                                Pattern = Pattern.Replace(CurrentWhat, CurrentBy);
+                            }
+                            var newNode = HtmlNode.CreateNode(Pattern);
+                            node.ParentNode.ReplaceChild(newNode, node);
+                        }
+                        result = doc.DocumentNode.OuterHtml;
                     }
-
-                    foreach (var CurrentWhatsIterator in CurrentWhats)
-                    {
-                        CurrentWhat = CurrentWhatsIterator.Replace("\\r\\n", "");
-                        var regex = new Regex(CurrentWhat);
-                        result = regex.Replace(result.Replace("\r\n", "\n"), repair ? item.what : item.by);
-                    }
-
                 }
             }
 
             return result;
         }
 
-        private void RecurseFindNodeTextsByOuterHtml(List<string> FindedTexts, HtmlNode Node, string what)
-        {
-            IEnumerable<HtmlNode> ChildElements = Node.ChildNodes.Where(node => node.NodeType == HtmlNodeType.Element);
-            foreach (var n in ChildElements)
-            {
-                if (n.OuterHtml.Contains(what))
-                {
-                    if (!n.InnerHtml.Contains(what))
-                    {
-                        FindedTexts.Add(n.OuterHtml);
-                    }
-                    RecurseFindNodeTextsByOuterHtml(FindedTexts, n, what);
-                }
-            }
-        }
     }
 }
