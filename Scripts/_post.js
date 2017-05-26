@@ -2,25 +2,10 @@
 
 jQuery_pocket(document).ready(function () {
 
-    var onsubmitname = "onsubmit_" + pocket_guid;
-    jQuery_pocket("form").each(function() {
-        jQuery_pocket(this).attr(onsubmitname, jQuery_pocket(this).attr("onsubmit")).removeAttr("onsubmit");
-    })
-
     jQuery_pocket(document).on("submit", "form", function (e) {
 
         e.preventDefault();
         
-        var code = jQuery(this).attr(onsubmitname);
-        if (code) {
-            this[onsubmitname] = function () {
-                return new Function(code)();
-            }
-            if (this[onsubmitname]() == false) {
-                return false;
-            }
-        }
-
         var form_data = new FormData(this);
 
         form_data.append("from URL", location.href);
