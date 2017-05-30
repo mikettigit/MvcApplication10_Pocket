@@ -125,6 +125,7 @@ namespace MvcApplication10.Controllers
         }
 
         [AcceptVerbs(HttpVerbs.Get)]
+        [OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
             var NameValueCollection = HttpUtility.ParseQueryString(Request.QueryString.ToString());
