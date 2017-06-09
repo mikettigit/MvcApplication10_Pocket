@@ -25,6 +25,8 @@ namespace MvcApplication10.Models
 
         private bool locked;
 
+        public bool adminmode;
+
         private CookieContainer cookiecontainer;
 
         public string ServerDomainName
@@ -113,6 +115,8 @@ namespace MvcApplication10.Models
             messagefrom = _messagefrom;
             messageto = _messageto;
             locked = _locked;
+
+            adminmode = false;
 
             cookiecontainer = new CookieContainer();
 

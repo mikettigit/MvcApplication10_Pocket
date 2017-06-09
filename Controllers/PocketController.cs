@@ -85,7 +85,7 @@ namespace MvcApplication10.Controllers
         {
             get 
             {
-                 Dictionary<string, string> result = new  Dictionary<string, string>();
+                Dictionary<string, string> result = new  Dictionary<string, string>();
 
                 SessionManager sm = new SessionManager();
 
