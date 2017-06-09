@@ -14,6 +14,12 @@ namespace MvcApplication10
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
+                name: "Predefined",
+                url: "{controller}/{action}",
+                defaults: new { action = "Index" }
+            );
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{*query}",
                 defaults: new { controller = "Pocket", action = "Index" }
