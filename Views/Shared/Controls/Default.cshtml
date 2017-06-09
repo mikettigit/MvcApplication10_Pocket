@@ -1,5 +1,5 @@
 ﻿@{
-    string model = ViewData.Model as string;
+    object model = ViewData.Model as object;
 }
 
 <input type="hidden" name="time" value="@DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")" />
