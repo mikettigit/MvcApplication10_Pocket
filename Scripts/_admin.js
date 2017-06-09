@@ -7,6 +7,11 @@
 
 function onHashChange() {
     if (location.hash.toLowerCase() == "#admin") {
-        location.href = "/admin?url=" + encodeURIComponent(location.pathname);
+        //jQuery_pocket.ajax({
+        //    url: location.href,
+        //    data: {"NeedAuth": true},
+        //    cache: false,
+        //    type: 'GET'
+        //});
     }
 }
