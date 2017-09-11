@@ -16,7 +16,7 @@ namespace MvcApplication10
             routes.MapRoute(
                 name: "Predefined",
                 url: "Admin/{action}",
-                defaults: new { action = "Index" }
+                defaults: new { controller = "Admin", action = "Index" }
             );
 
             routes.MapRoute(

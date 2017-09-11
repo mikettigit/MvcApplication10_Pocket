@@ -14,73 +14,11 @@ using System.Web.Mvc;
 
 namespace MvcApplication10.Controllers
 {
-    public class PocketController : Controller
+    public class PocketController : ControllerWrapper
     {
         //
         // GET: /Pocket/
-
-        protected IEnumerable<string> ExceptQueryParams
-        {
-            get
-            {
-                IEnumerable<string> result = null;
-
-                SessionManager sm = new SessionManager();
-
-                object exceptQueryParams = sm.Get("exceptQueryParams");
-                if (exceptQueryParams != null)
-                {
-                    result = exceptQueryParams as IEnumerable<string>;
-                }
-                else
-                {
-                    string ExceptQueryParamsString = ConfigurationManager.AppSettings["ExceptQueryParams"];
-                    result = ExceptQueryParamsString.Split(new char[1] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-                    sm.Set("exceptQueryParams", exceptQueryParams);
-                }
-
-                return result;
-            }
-        }
-
-
-        protected PocketModel Pocket
-        {
-            get
-            {
-                PocketModel result = null;
-
-                SessionManager sm = new SessionManager();
-
-                object pocketModel = sm.Get("pocketModel");
-                if (pocketModel != null)
-                {
-                    result = pocketModel as PocketModel;
-                }
-                else
-                {
-                    string SourceUrl = ConfigurationManager.AppSettings["PocketSource"];
-                    if (!String.IsNullOrEmpty(SourceUrl) && Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
-                    {
-                        string ServerFolderPath = Server.MapPath("/");
-                        string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-                        if (!String.IsNullOrEmpty(AllPocketsFolderPath))
-                        {
-                            AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
-                        }
-                        string ServerDomainName = Request.Url.Authority;
-                        string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
-                        string messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
-                        result = new PocketModel(SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
-
-                        sm.Set("pocketModel", result);
-                    }
-                }
-
-                return result;
-            }
-        }
-
+       
         protected Dictionary<string, string> SharedControls
         {
             get 
@@ -121,26 +59,14 @@ namespace MvcApplication10.Controllers
                 viewResult.View.Render(viewContext, sw);
                 viewResult.ViewEngine.ReleaseView(ControllerContext, viewResult.View);
                 return sw.GetStringBuilder().ToString();
-            }
+            } 
         }
 
         [AcceptVerbs(HttpVerbs.Get)]
-        [OutputCache(CacheProfile = "Index Get")]
+        //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
-            var NameValueCollection = HttpUtility.ParseQueryString(Request.QueryString.ToString());
-            foreach (string _key in NameValueCollection.AllKeys)
-            {
-                foreach (string ExceptQueryParam in ExceptQueryParams)
-                {
-                    if (_key.Contains(ExceptQueryParam))
-                    {
-                        NameValueCollection.Remove(_key);
-                    }
-                }
-            }
-            string RequestQueryString = (NameValueCollection.Count > 0) ? "?" + NameValueCollection.ToString() : "";
-            string RequestPath = String.Format("{0}{1}", Request.Url.AbsolutePath, RequestQueryString);
+            string RequestPath = GetClearRequestPath(Request.Url.AbsolutePath, Request.QueryString.ToString());
 
             string ContentType = MimeMapping.GetMimeMapping(Request.Path).ToLower();
             if ((ContentType == "application/octet-stream"

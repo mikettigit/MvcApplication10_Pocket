@@ -59,17 +59,17 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string Replace(string source, string target)
+        public string Replace(string source, string target, bool isJsOrCss)
         {
-            return Replacement(source, target, false);
+            return Replacement(source, target, isJsOrCss, false);
         }
 
         public string Repair(string source)
         {
-            return Replacement(source, source, true);
+            return Replacement(source, source, true, true);
         }
 
-        private string Replacement(string source, string target, bool repair)
+        private string Replacement(string source, string target, bool ignoreXPath, bool repair)
         {
             string result = String.Copy(source);
 
@@ -94,21 +94,27 @@ namespace MvcApplication10.Models
                     }
                     else
                     {
-                        HtmlDocument doc = new HtmlDocument();
-                        doc.LoadHtml(result);
-                        var nodes = doc.DocumentNode.SelectNodes(item.xpath);
-                        foreach (var node in nodes)
+                        if (!ignoreXPath)
                         {
-                            string Pattern = CurrentBy;
-                            if (!CurrentWhat.IsEmpty())
+                            HtmlDocument doc = new HtmlDocument();
+                            doc.LoadHtml(result);
+                            var nodes = doc.DocumentNode.SelectNodes(item.xpath);
+                            if (nodes != null)
                             {
-                                Pattern = node.OuterHtml;
-                                Pattern = Pattern.Replace(CurrentWhat, CurrentBy);
+                                foreach (var node in nodes)
+                                {
+                                    string Pattern = CurrentBy;
+                                    if (!CurrentWhat.IsEmpty())
+                                    {
+                                        Pattern = node.OuterHtml;
+                                        Pattern = Pattern.Replace(CurrentWhat, CurrentBy);
+                                    }
+                                    var newNode = HtmlNode.CreateNode(Pattern);
+                                    node.ParentNode.ReplaceChild(newNode, node);
+                                }
+                                result = doc.DocumentNode.OuterHtml;
                             }
-                            var newNode = HtmlNode.CreateNode(Pattern);
-                            node.ParentNode.ReplaceChild(newNode, node);
                         }
-                        result = doc.DocumentNode.OuterHtml;
                     }
                 }
             }

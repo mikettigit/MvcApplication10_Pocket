@@ -116,7 +116,7 @@ namespace MvcApplication10.Models
             messageto = _messageto;
             locked = _locked;
 
-            adminmode = false;
+            adminmode = !false;
 
             cookiecontainer = new CookieContainer();
 
@@ -220,7 +220,7 @@ namespace MvcApplication10.Models
             return result;
         }
 
-        private string GetPocketFilePath(string path, bool isContent, bool isHashed)
+        public string GetPocketFilePath(string path, bool isContent, bool isHashed)
         {
             string result = "";
 
@@ -364,6 +364,7 @@ namespace MvcApplication10.Models
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
                         SetStreamToPocket(new MemoryStream(byteArray), SampleFilepath);
+                        File.Copy(SampleFilepath, SampleFilepath + ".original");
                     }
                 }
 
@@ -372,7 +373,7 @@ namespace MvcApplication10.Models
                     { 
                         result = EnhanceModel.Enhance(result);
                     }
-                    result = ReplacementModel.Replace(result, path);
+                    result = ReplacementModel.Replace(result, path, isJsOrCss);
                     if (CacheMode && !locked)
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);

@@ -1,5 +1,8 @@
 ﻿@{
-    object model = ViewData.Model as object;
+    MvcApplication10.Models.PocketModel model = ViewData.Model as MvcApplication10.Models.PocketModel;
 }
 
-<input type="hidden" name="time" value="@DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")" />
+<input type="hidden" name="generated" value="@DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")" />
+@if (model.adminmode) {
+    <input type="hidden" name="adminmode" />
+}
