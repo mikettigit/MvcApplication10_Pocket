@@ -116,7 +116,7 @@ namespace MvcApplication10.Models
             messageto = _messageto;
             locked = _locked;
 
-            adminmode = !false;
+            adminmode = false;
 
             cookiecontainer = new CookieContainer();
 

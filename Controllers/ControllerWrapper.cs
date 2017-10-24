@@ -47,6 +47,11 @@ namespace MvcApplication10.Controllers
 
                 return result;
             }
+            set
+            {
+                SessionManager sm = new SessionManager();
+                sm.Set("pocketModel", value);
+            }
         }
         
         private IEnumerable<string> ExceptQueryParams

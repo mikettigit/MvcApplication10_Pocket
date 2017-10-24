@@ -5,9 +5,13 @@
 
     if (jQuery_pocket("#2fea14ff-d8e3-42c1-a230-3917b7a640c9 [name='adminmode']").length > 0) {
 
+        var highlight = true;
+
         var panel_main = jQuery_pocket("<div style='position:fixed; z-index:99999; top: 0px; left: 0px;'></div>");
         var button_stub = jQuery_pocket("<input type='button' value='&#8596;'/>");
         button_stub.appendTo(panel_main);
+        var button_onoff = jQuery_pocket("<input type='button' value='&#9745;'/>");
+        button_onoff.appendTo(panel_main);
         var button_ok = jQuery_pocket("<input type='button' value='Сохранить [Ctrl + Enter]'/>");
         button_ok.appendTo(panel_main);
         var button_x = jQuery_pocket("<input type='button' value='x'/>");
@@ -46,6 +50,17 @@
                 type: 'POST'
             });
             
+        })
+
+        jQuery_pocket(button_onoff).click(function () {
+
+            highlight = !highlight;
+            if (highlight) {
+                jQuery_pocket(this).val("\u2611");
+            } else {
+                jQuery_pocket(this).val("\u2610");
+            }
+
         })
 
         jQuery_pocket(button_x).click(function () {
@@ -91,17 +106,18 @@
                         oldclonewrapper.remove();
                     })
 
-                    var clone = current.clone();
-                    var clonewrapper = jQuery_pocket("<div></div>");
-                    clonewrapper
-                        .addClass("clone")
-                        .hide()
-                        .append(clone);
+                    if (highlight) {
+                        var clone = current.clone();
+                        var clonewrapper = jQuery_pocket("<div></div>");
+                        clonewrapper
+                            .addClass("clone")
+                            .hide()
+                            .append(clone);
 
-                    current
-                        .attr("contenteditable", "true")
-                        .after(clonewrapper)
-
+                        current
+                            .attr("contenteditable", "true")
+                            .after(clonewrapper)
+                    }
                 }
             })
     }
@@ -111,6 +127,15 @@
 function onHashChange() {
     if (location.hash.toLowerCase() == "#admin") {
         location.href = "/admin?url=" + encodeURIComponent(location.pathname);
+    }
+    if (location.hash.toLowerCase() == "#reset") {
+        jQuery_pocket.ajax({
+            url: "/Admin/Reset",
+            success: function () {
+                location.href = location.href.split('#')[0];
+            },
+            type: 'POST'
+        });
     }
 }
 
