@@ -38,7 +38,7 @@
                      
             var form_data = new FormData();
             form_data.append("from URL", location.href);
-            form_data.append("content", btoa(unescape(encodeURIComponent($('html').html()))));
+            form_data.append("content", btoa(unescape(encodeURIComponent(jQuery_pocket('html').html()))));
 
             jQuery_pocket.ajax({
                 url: "/Admin/SaveAll",
