@@ -83,11 +83,14 @@ namespace MvcApplication10.Controllers
             var NameValueCollection = HttpUtility.ParseQueryString(QueryString);
             foreach (string _key in NameValueCollection.AllKeys)
             {
-                foreach (string ExceptQueryParam in ExceptQueryParams)
+                if (_key != null)
                 {
-                    if (_key.Contains(ExceptQueryParam))
+                    foreach (string ExceptQueryParam in ExceptQueryParams)
                     {
-                        NameValueCollection.Remove(_key);
+                        if (_key.Contains(ExceptQueryParam))
+                        {
+                            NameValueCollection.Remove(_key);
+                        }
                     }
                 }
             }
