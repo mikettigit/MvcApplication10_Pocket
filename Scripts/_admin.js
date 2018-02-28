@@ -8,13 +8,13 @@
         var highlight = true;
 
         var panel_main = jQuery_pocket("<div style='position:fixed; z-index:99999; top: 0px; left: 0px;'></div>");
-        var button_stub = jQuery_pocket("<input type='button' value='&#8596;'/>");
+        var button_stub = jQuery_pocket("<input type='button' value='&#8596;' style='padding: 10px !important; margin: 1px !important;'/>");
         button_stub.appendTo(panel_main);
-        var button_onoff = jQuery_pocket("<input type='button' value='&#9745;'/>");
+        var button_onoff = jQuery_pocket("<input type='button' value='&#9745;' style='padding: 10px !important; margin: 1px !important;'/>");
         button_onoff.appendTo(panel_main);
-        var button_ok = jQuery_pocket("<input type='button' value='Сохранить [Ctrl + Enter]'/>");
+        var button_ok = jQuery_pocket("<input type='button' value='Сохранить [Ctrl + Enter]' style='padding: 10px !important; margin: 1px !important;'/>");
         button_ok.appendTo(panel_main);
-        var button_x = jQuery_pocket("<input type='button' value='x'/>");
+        var button_x = jQuery_pocket("<input type='button' value='x' style='padding: 10px !important; margin: 1px !important;'/>");
         button_x.appendTo(panel_main);
         panel_main.appendTo("#2fea14ff-d8e3-42c1-a230-3917b7a640c9");
 
@@ -96,27 +96,10 @@
                     jQuery_pocket("[contenteditable]").each(function () {
                         var old = jQuery_pocket(this);
                         old.removeAttr("contenteditable");
-                        var oldclonewrapper = old.next("div.clone");
-                        if (oldclonewrapper.length > 0) {
-                            var clone = oldclonewrapper.children();
-                            //if (old[0].outerHTML != clone[0].outerHTML) {
-                            //    old[0].outerHTML = clone[0].outerHTML;
-                            //}
-                        }
-                        oldclonewrapper.remove();
                     })
 
                     if (highlight) {
-                        var clone = current.clone();
-                        var clonewrapper = jQuery_pocket("<div></div>");
-                        clonewrapper
-                            .addClass("clone")
-                            .hide()
-                            .append(clone);
-
-                        current
-                            .attr("contenteditable", "true")
-                            .after(clonewrapper)
+                        current.attr("contenteditable", "true")
                     }
                 }
             })
