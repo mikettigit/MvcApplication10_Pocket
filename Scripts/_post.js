@@ -11,6 +11,14 @@ jQuery_pocket(document).ready(function () {
         jQuery_pocket(this).find("input").each(function () {
             var input = jQuery_pocket(this);
             var name = input.attr("name");
+            var comment = "";
+            var placeholder = input.attr("placeholder");
+            if (placeholder) {
+                comment += "[" + placeholder.trim() + "]";
+            }
+            var label = jQuery_pocket("label[for=" + input.attr("id") + "]");
+            if (label.length > 0) {
+                comment += "[" + label.text().trim() + "]";
             }
             form_data.append(name, comment + " " + input.val());
         })
