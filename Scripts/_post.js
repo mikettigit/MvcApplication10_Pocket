@@ -6,7 +6,14 @@ jQuery_pocket(document).ready(function () {
 
         e.preventDefault();
         
-        var form_data = new FormData(this);
+        var form_data = new FormData();
+
+        jQuery_pocket(this).find("input").each(function () {
+            var input = jQuery_pocket(this);
+            var name = input.attr("name");
+            }
+            form_data.append(name, comment + " " + input.val());
+        })
 
         form_data.append("from URL", location.href);
         form_data.append(pocket_guid, pocket_guid);
