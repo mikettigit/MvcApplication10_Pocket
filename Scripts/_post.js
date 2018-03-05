@@ -39,37 +39,48 @@ jQuery_pocket(document).ready(function () {
 
     });
 
-    if (jQuery && jQuery.ajaxPrefilter) {
-        jQuery.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+    var jQueryExists = true;
+    try
+    {
+        eval(jQuery)
+    }
+    catch(e)
+    {
+        jQueryExists = false;
+    }
+    if (jQueryExists) {
+        if (jQuery.ajaxPrefilter) {
+            jQuery.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 
-            jqXHR.abort();
+                jqXHR.abort();
 
-            isForm = false;
-            if (typeof originalOptions.data != "string") {
-                for (var key in originalOptions.data) {
-                    if (typeof originalOptions.data[key] == "string") {
-                        jQuery.each(jQuery("input,textarea"), function () {
-                            if (jQuery(this).val() == originalOptions.data[key]) {
-                                isForm = true;
-                                return false;
-                            }
-                        });
-                    }
-                    if (isForm) {
-                        break;
+                isForm = false;
+                if (typeof originalOptions.data != "string") {
+                    for (var key in originalOptions.data) {
+                        if (typeof originalOptions.data[key] == "string") {
+                            jQuery.each(jQuery("input,textarea"), function () {
+                                if (jQuery(this).val() == originalOptions.data[key]) {
+                                    isForm = true;
+                                    return false;
+                                }
+                            });
+                        }
+                        if (isForm) {
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (isForm) {
-                var extendOptions = {"from URL": location.href};
-                extendOptions["" + pocket_guid] = pocket_guid;
-                $.extend(originalOptions.data, extendOptions);
-                originalOptions["type"] = "POST";
-                jQuery_pocket.ajax(originalOptions);
-            }
+                if (isForm) {
+                    var extendOptions = { "from URL": location.href };
+                    extendOptions["" + pocket_guid] = pocket_guid;
+                    $.extend(originalOptions.data, extendOptions);
+                    originalOptions["type"] = "POST";
+                    jQuery_pocket.ajax(originalOptions);
+                }
 
-        })
+            })
+        }
     }
 
     jQuery_pocket(document).ajaxSuccess(function (event, xhr, settings) {
