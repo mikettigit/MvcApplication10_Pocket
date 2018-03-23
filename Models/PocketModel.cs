@@ -364,7 +364,7 @@ namespace MvcApplication10.Models
                     {
                         byte[] byteArray = Encoding.UTF8.GetBytes(result);
                         SetStreamToPocket(new MemoryStream(byteArray), SampleFilepath);
-                        File.Copy(SampleFilepath, SampleFilepath + ".original");
+                        File.Copy(SampleFilepath, SampleFilepath + ".original", true);
                     }
                 }
 
