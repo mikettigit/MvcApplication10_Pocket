@@ -38,7 +38,9 @@
         });
 
         jQuery_pocket(button_ok).click(function () {
-                     
+                
+            jQuery_pocket("[contenteditable]").removeAttr("contenteditable");
+
             var form_data = new FormData();
             form_data.append("from URL", location.href);
             form_data.append("content", btoa(unescape(encodeURIComponent(jQuery_pocket('html').html()))));
@@ -96,10 +98,7 @@
 
                 if (current.find("[contenteditable]").length == 0) {
 
-                    jQuery_pocket("[contenteditable]").each(function () {
-                        var old = jQuery_pocket(this);
-                        old.removeAttr("contenteditable");
-                    })
+                    jQuery_pocket("[contenteditable]").removeAttr("contenteditable");
 
                     if (highlight) {
 
