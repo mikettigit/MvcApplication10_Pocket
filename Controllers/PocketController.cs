@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Mail;
 using System.Text;
 using System.Web;
@@ -60,6 +61,33 @@ namespace MvcApplication10.Controllers
                 viewResult.ViewEngine.ReleaseView(ControllerContext, viewResult.View);
                 return sw.GetStringBuilder().ToString();
             } 
+        }
+
+        public string Loan(FormCollection collection)
+        {
+
+            CookieContainer cookiecontainer = new CookieContainer();
+
+            var LoginRequest = (HttpWebRequest)WebRequest.Create("https://www.molbulak.ru/ajax/loan.php");
+            LoginRequest.CookieContainer = cookiecontainer;
+            LoginRequest.Method = "POST";
+            LoginRequest.ContentType = "application/x-www-form-urlencoded";
+            var loginData = String.Format("PROPERTY[ON_WHOM]={0}&PROPERTY[PAY]={1}&PROPERTY[TERM]={2}", collection["PROPERTY[ON_WHOM]"], collection["PROPERTY[PAY]"], collection["PROPERTY[TERM]"]);
+            var buffer = Encoding.ASCII.GetBytes(loginData);
+            LoginRequest.ContentLength = buffer.Length;
+            var requestStream = LoginRequest.GetRequestStream();
+            requestStream.Write(buffer, 0, buffer.Length);
+            requestStream.Close();
+
+            string loginresult = "";
+            var response = (HttpWebResponse)LoginRequest.GetResponse();
+            using (var streamReader = new StreamReader(response.GetResponseStream()))
+            {
+                loginresult = streamReader.ReadToEnd();
+            }
+
+            return loginresult;
+
         }
 
         [AcceptVerbs(HttpVerbs.Get)]
@@ -123,7 +151,14 @@ namespace MvcApplication10.Controllers
         {
             JsonMessage jm = new JsonMessage();
 
-            if (String.IsNullOrEmpty(collection["2fea14ff-d8e3-42c1-a230-3917b7a640c9"]))
+            if (collection["PROPERTY[ON_WHOM]"] != null)
+            {
+                jm.Object = "LoanResult";
+                jm.Message = Loan(collection);
+                return Json(jm);
+            }
+
+            if (String.IsNullOrEmpty(collection["2fea14ff-d8e3-42c1-a230-3917b7a640c9"]) && collection["ACTION"]!="save")
             {
                 jm.Result = true;
                 jm.Message = "Невозможно отправить данные - не обнаружен ключ формы";
