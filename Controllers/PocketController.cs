@@ -63,30 +63,39 @@ namespace MvcApplication10.Controllers
             } 
         }
 
-        public string Loan(FormCollection collection)
+        public string GetCrossdomainContent(FormCollection collection)
         {
+
+            string result = "";
 
             CookieContainer cookiecontainer = new CookieContainer();
 
-            var LoginRequest = (HttpWebRequest)WebRequest.Create("https://www.molbulak.ru/ajax/loan.php");
-            LoginRequest.CookieContainer = cookiecontainer;
-            LoginRequest.Method = "POST";
-            LoginRequest.ContentType = "application/x-www-form-urlencoded";
-            var loginData = String.Format("PROPERTY[ON_WHOM]={0}&PROPERTY[PAY]={1}&PROPERTY[TERM]={2}", collection["PROPERTY[ON_WHOM]"], collection["PROPERTY[PAY]"], collection["PROPERTY[TERM]"]);
-            var buffer = Encoding.ASCII.GetBytes(loginData);
-            LoginRequest.ContentLength = buffer.Length;
-            var requestStream = LoginRequest.GetRequestStream();
+            var CrossdomainRequest = (HttpWebRequest)WebRequest.Create("http://www.site.com");
+            CrossdomainRequest.CookieContainer = cookiecontainer;
+            CrossdomainRequest.Method = "POST";
+            CrossdomainRequest.ContentType = "application/x-www-form-urlencoded";
+
+
+            string CrossdomainRequestParams = "";
+            foreach (string key in collection.Keys)
+            {
+                CrossdomainRequestParams += (CrossdomainRequestParams.IsEmpty() ? "" : "&") + key + "=" + collection[key];
+            }
+            CrossdomainRequestParams += (CrossdomainRequestParams.IsEmpty() ? "" : "&") + "SomeParam=1";
+
+            var buffer = Encoding.ASCII.GetBytes(CrossdomainRequestParams);
+            CrossdomainRequest.ContentLength = buffer.Length;
+            var requestStream = CrossdomainRequest.GetRequestStream();
             requestStream.Write(buffer, 0, buffer.Length);
             requestStream.Close();
-
-            string loginresult = "";
-            var response = (HttpWebResponse)LoginRequest.GetResponse();
+            
+            var response = (HttpWebResponse)CrossdomainRequest.GetResponse();
             using (var streamReader = new StreamReader(response.GetResponseStream()))
             {
-                loginresult = streamReader.ReadToEnd();
+                result = streamReader.ReadToEnd();
             }
 
-            return loginresult;
+            return result;
 
         }
 
@@ -151,14 +160,14 @@ namespace MvcApplication10.Controllers
         {
             JsonMessage jm = new JsonMessage();
 
-            if (collection["PROPERTY[ON_WHOM]"] != null)
+            if (collection["SomeCrossdomainContentName"] != null)
             {
-                jm.Object = "LoanResult";
-                jm.Message = Loan(collection);
+                jm.Object = "SomeCrossdomainContent";
+                jm.Message = GetCrossdomainContent(collection);
                 return Json(jm);
             }
 
-            if (String.IsNullOrEmpty(collection["2fea14ff-d8e3-42c1-a230-3917b7a640c9"]) && collection["ACTION"]!="save")
+            if (String.IsNullOrEmpty(collection["2fea14ff-d8e3-42c1-a230-3917b7a640c9"]))
             {
                 jm.Result = true;
                 jm.Message = "Невозможно отправить данные - не обнаружен ключ формы";
