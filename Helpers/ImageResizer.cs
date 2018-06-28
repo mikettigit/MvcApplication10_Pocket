@@ -40,13 +40,22 @@ namespace MvcApplication10.Helpers
             img.Save(newfilename);
         }
 
+        public static void Proceed(Stream InputStream, string filename, int width, int height)
+        {
+            Image objImage = Image.FromStream(InputStream);
+
+            Image img = ScaleImage(objImage, width, height);
+
+            img.Save(filename);
+        }
+
         private static Image ScaleImage(Image source, int width, int height)
         {
 
             Image dest = new Bitmap(width, height);
             using (Graphics gr = Graphics.FromImage(dest))
             {
-                gr.FillRectangle(Brushes.White, 0, 0, width, height);  // Очищаем экран
+                gr.FillRectangle(Brushes.Transparent, 0, 0, width, height);  // Очищаем экран
                 gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
                 float srcwidth = source.Width;

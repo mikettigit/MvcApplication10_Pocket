@@ -1,10 +1,5 @@
 ﻿jQuery_pocket(document).ready(function () {
 
-    window.onhashchange = onHashChange;
-    onHashChange();
-
-    if (jQuery_pocket("#2fea14ff-d8e3-42c1-a230-3917b7a640c9 [name='adminmode']").length > 0) {
-
         var highlight = true;
 
         var panel_main = jQuery_pocket("<div style='position:fixed; z-index:99999; top: 0px; left: 0px;'></div>");
@@ -12,14 +7,13 @@
         button_stub.appendTo(panel_main);
         var button_onoff = jQuery_pocket("<input type='button' value='&#9745;' style='padding: 10px !important; margin: 1px !important;'/>");
         button_onoff.appendTo(panel_main);
-        var button_ok = jQuery_pocket("<input type='button' value='Сохранить [Ctrl + Enter]' style='padding: 10px !important; margin: 1px !important;'/>");
+        var button_ok = jQuery_pocket("<input type='button' value='Сохранить' style='padding: 10px !important; margin: 1px !important;'/>");
         button_ok.appendTo(panel_main);
         var button_x = jQuery_pocket("<input type='button' value='x' style='padding: 10px !important; margin: 1px !important;'/>");
         button_x.appendTo(panel_main);
+        var container_images = jQuery_pocket("<div style='display:inline-block;'><form style='display:none;'><input type='hidden' name='target'/><input type='file' name='file' accept='image/jpeg,image/png,image/gif'/></form></div>");
+        container_images.appendTo(panel_main);
         panel_main.appendTo("#2fea14ff-d8e3-42c1-a230-3917b7a640c9");
-
-        //var panel_images = jQuery_pocket("<div style='position:fixed; z-index:99999; top: 0px; left: 0px;'></div>");
-        //panel_images.appendTo("#2fea14ff-d8e3-42c1-a230-3917b7a640c9");
 
         var $dragging = null;
         jQuery_pocket(button_stub).mousedown(function (e) {
@@ -49,6 +43,9 @@
                 url: "/Admin/SaveAll",
                 data: form_data,
                 dataType: "json",
+                success: function (data) {
+                    alert(data.Message);
+                },
                 cache: false,
                 contentType: false,
                 processData: false,
@@ -80,6 +77,35 @@
 
         })
 
+        jQuery_pocket(container_images).on("click", "img", function () {
+            jQuery_pocket(container_images).find("form").find("input[name='target']").val(jQuery_pocket(this).attr("src"));
+            jQuery_pocket(container_images).find("input[type='file']").click();
+        })
+
+        jQuery_pocket(container_images).find("input[type='file']").change(function () {
+            var oldname = jQuery_pocket(container_images).find("form").find("input[name='target']").val();
+            var form_data = new FormData(jQuery_pocket(container_images).find("form")[0]);
+            jQuery_pocket.ajax({
+                url: '/Admin/UploadImage',
+                data: form_data,
+                success: function (data) {
+                    if (data.Result) {
+                        var newname = data.Message;
+                        jQuery_pocket("img[src='" + oldname + "']").attr("src", newname);
+                        BackgroundImageContainers(jQuery_pocket(document), oldname).each(function() {
+                            var CurrentElement = jQuery_pocket(this);
+                            var style = CurrentElement.attr("style");
+                            CurrentElement.attr("style", (typeof style !== typeof undefined && style !== false && style !== "" ? style : "") + ";background-image:url(" + newname + ") !important;");
+                        })
+                    }
+                },
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: "POST"
+            });
+        })
+
         jQuery_pocket(
             "<style>\
                 [contenteditable] {\
@@ -92,7 +118,7 @@
 
                 var current = jQuery_pocket(this);
 
-                if (current.is(panel_main) || current.is(panel_main.children())) {
+                if (current.is(panel_main) || current.is(panel_main.children()) || current.is(container_images) || current.is(container_images.children())) {
                     return false;
                 }
 
@@ -102,47 +128,44 @@
 
                     if (highlight) {
 
-                        current.attr("contenteditable", "true")
-
-                        //panel_images.find("img").remove();
-                        //var ImgPath = absolutePath(jQuery_pocket(current).attr("src"));
-                        //var miniature = jQuery_pocket("<img src='" + ImgPath + "' style='width:30px;'>");
-                        //miniature.appendTo(panel_images);
-                        //var offset = current.offset();
-                        //var height = current.height();
-                        //var width = current.width();
-                        //var top = offset.top + height - panel_images.height() + "px";
-                        //var right = offset.left + width + "px";
-                        //panel_images.css({
-                        //    'position': 'absolute',
-                        //    'right': right,
-                        //    'top': top
-                        //});
+                        current.attr("contenteditable", "true");
+                        
+                        var ImgSrcCollection = [];
+                        //img
+                        jQuery_pocket.each(current.find("img").addBack("img"), function () {
+                            ImgSrcCollection.push(jQuery_pocket(this).attr("src"));
+                        })
+                        //background-image
+                        jQuery_pocket.each(BackgroundImageContainers(current, "url(\""), function () {
+                            ImgSrcCollection.push(jQuery_pocket(this).css("background-image").replace("url(\"","").replace("\")",""));
+                        })
+                        jQuery_pocket.each(ImgSrcCollection, function () {
+                            var AlreadyExisting = container_images.find("img[src='" + this + "']");
+                            if (AlreadyExisting.length > 0) {
+                                container_images.prepend(AlreadyExisting);
+                            }
+                            else {
+                                var image = jQuery_pocket("<img src='" + this + "' style='margin: 0 1px !important;'/>");
+                                image.height(button_stub.outerHeight());
+                                container_images.prepend(image);
+                                container_images.find("img").slice(8).remove();
+                            }
+                        })
 
                     }
                 }
             })
-    }
 
 });
 
-function onHashChange() {
-    if (location.hash.toLowerCase() == "#admin") {
-        location.href = "/admin?url=" + encodeURIComponent(location.pathname);
-    }
-    if (location.hash.toLowerCase() == "#reset") {
-        jQuery_pocket.ajax({
-            url: "/Admin/Reset",
-            success: function () {
-                location.href = location.href.split('#')[0];
-            },
-            type: 'POST'
-        });
-    }
-}
+function BackgroundImageContainers(element, searchingString) {
 
-function absolutePath(href) {
-    var link = document.createElement("a");
-    link.href = href;
-    return (link.protocol + "//" + link.host + link.pathname + link.search + link.hash);
+    var result = element.find("*").addBack("*")
+
+    result = result.filter(function () {
+        return jQuery_pocket(this).css("background-image").indexOf(searchingString) > -1
+    })
+
+    return result;
+
 }

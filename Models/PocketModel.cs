@@ -165,6 +165,7 @@ namespace MvcApplication10.Models
                 xConfiguration.Add(XLocked);
             xConfiguration.Add(xNotifications);
                 XElement xReplacementModel = new XElement("ReplacementModel");
+                for (int i = 0; i < 3; i++) { 
                     XElement xReplacement = new XElement("Replacement");
                         XAttribute xTarget = new XAttribute("target", "");
                         xReplacement.Add(xTarget);
@@ -176,7 +177,8 @@ namespace MvcApplication10.Models
                         XElement xBy = new XElement("by");
                             xBy.Add(new XCData(""));
                         xReplacement.Add(xBy);
-                xReplacementModel.Add(xReplacement);
+                    xReplacementModel.Add(xReplacement);
+                }
             xConfiguration.Add(xReplacementModel);
             xConfiguration.Save(_configfilepath);
 
@@ -274,7 +276,7 @@ namespace MvcApplication10.Models
             return result;
         }
 
-        private void SetStreamToPocket(MemoryStream MemoryStream, string path)
+        public void SetStreamToPocket(MemoryStream MemoryStream, string path)
         {
             try
             {

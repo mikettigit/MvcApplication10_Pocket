@@ -158,7 +158,7 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Sheets\_1_main.cshtml" />
+    <Content Include="Sheets\Main.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Pocket\" />

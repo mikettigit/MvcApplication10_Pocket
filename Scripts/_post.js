@@ -2,11 +2,6 @@
 
 jQuery_pocket(document).ready(function () {
 
-    jQuery_pocket("<style>")
-    .prop("type", "text/css")
-       .html(".err {border: 1px solid #eb4848 !important; box-shadow: 0 0 10px #f00 !important;}")
-       .appendTo("head");
-
     jQuery_pocket(document).on("submit", "form", function (e) {
 
         e.preventDefault();
