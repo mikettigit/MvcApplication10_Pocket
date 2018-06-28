@@ -35,7 +35,7 @@ namespace MvcApplication10.Controllers
             {
                 jm.Message = "Ok";
                 jm.Result = true;
-                Pocket.adminmode = true;
+                Pocket.AdminModel.Active = true;
             }
             
             return Json(jm);
@@ -47,7 +47,7 @@ namespace MvcApplication10.Controllers
             JsonMessage jm = new JsonMessage();
             jm.Message = "Сейчас страница будет обновлена...";
             jm.Result = true;
-            Pocket.adminmode = false;
+            Pocket.AdminModel.Active = false;
             return Json(jm);
         }
 
@@ -56,7 +56,7 @@ namespace MvcApplication10.Controllers
         {
             JsonMessage jm = new JsonMessage();
 
-            if (Pocket.adminmode == true)
+            if (Pocket.AdminModel.Active == true)
             {
                 Uri FromUrlValue = new Uri(collection["from URL"]);
                 string SampleFilepath = Pocket.GetPocketFilePath(GetClearRequestPath(FromUrlValue.AbsolutePath, FromUrlValue.Query), true, false);
@@ -65,7 +65,6 @@ namespace MvcApplication10.Controllers
 
                 HtmlDocument doc = new HtmlDocument();
                 doc.LoadHtml(Content);
-
                 var nodes = doc.DocumentNode.SelectNodes("//div[@id='2fea14ff-d8e3-42c1-a230-3917b7a640c9']");
                 if (nodes != null)
                 {
@@ -74,8 +73,9 @@ namespace MvcApplication10.Controllers
                         node.ParentNode.RemoveChild(node);
                     }
                 }
-
                 Content = doc.DocumentNode.OuterHtml;
+
+                Content = Content.Replace(Pocket.AdminModel.OpeningCommentBracket, "").Replace(Pocket.AdminModel.ClosingCommentBracket, "");
 
                 System.IO.File.WriteAllText(SampleFilepath, Content);
 
@@ -93,7 +93,7 @@ namespace MvcApplication10.Controllers
 
             jm.Result = false;
 
-            if (Pocket.adminmode == true)
+            if (Pocket.AdminModel.Active == true)
             {
                 if (Request.Files.Count > 0)
                 {

@@ -25,8 +25,6 @@ namespace MvcApplication10.Models
 
         private bool locked;
 
-        public bool adminmode;
-
         private CookieContainer cookiecontainer;
 
         public string ServerDomainName
@@ -100,8 +98,9 @@ namespace MvcApplication10.Models
                 Uri uri = new Uri(sourceurl);
                 return CurrentPocketFolderPath + uri.Host + ".log";
             }
-        } 
+        }
 
+        public AdminModel AdminModel;
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
@@ -115,8 +114,6 @@ namespace MvcApplication10.Models
             messagefrom = _messagefrom;
             messageto = _messageto;
             locked = _locked;
-
-            adminmode = false;
 
             cookiecontainer = new CookieContainer();
 
@@ -151,6 +148,8 @@ namespace MvcApplication10.Models
             ReplacementModel.Items.Add(new Replacement(new Uri(sourceurl).Host, "", serverdomainname, "", true));
             
             EnhanceModel = new EnhanceModel(this);
+
+            AdminModel = new AdminModel();
         }
 
         private XElement CreateEmptyConfigFile(string _configfilepath, string _messagefrom, string _messageto, bool _locked = false)

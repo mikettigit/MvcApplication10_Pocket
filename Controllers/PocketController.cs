@@ -1,4 +1,5 @@
-﻿using MvcApplication10.Helpers;
+﻿using HtmlAgilityPack;
+using MvcApplication10.Helpers;
 using MvcApplication10.Models;
 using System;
 using System.Collections.Generic;
@@ -122,6 +123,18 @@ namespace MvcApplication10.Controllers
                 else
                 {
                     string content = Pocket.GetContent(RequestPath, false);
+
+                    if (Pocket.AdminModel.Active)
+                    {
+                        HtmlDocument doc = new HtmlDocument();
+                        doc.LoadHtml(content);
+                        foreach (var scriptTag in doc.DocumentNode.SelectNodes("//script"))
+                        {
+                            var commentedScript = HtmlTextNode.CreateNode(Pocket.AdminModel.OpeningCommentBracket + scriptTag.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
+                            scriptTag.ParentNode.ReplaceChild(commentedScript, scriptTag);
+                        }
+                        content = doc.DocumentNode.OuterHtml;
+                    }
 
                     foreach (var ControlName in SharedControls)
                     {
