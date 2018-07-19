@@ -7,32 +7,7 @@
     <input type="hidden" name="generated" value="@DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")" />
     
     <script src="/Scripts/jquery_pocket.js" type="text/javascript"></script>
-    <script>
-
-        jQuery_pocket.noConflict();
-
-        jQuery_pocket(document).ready(function () {
-            window.onhashchange = onHashChange;
-            onHashChange();
-        })
-
-
-        function onHashChange() {
-            if (location.hash.toLowerCase() == "#admin") {
-                location.href = "/admin?url=" + encodeURIComponent(location.pathname);
-            }
-            if (location.hash.toLowerCase() == "#reset") {
-                jQuery_pocket.ajax({
-                    url: "/Admin/Reset",
-                    success: function () {
-                        location.href = location.href.split('#')[0];
-                    },
-                    type: 'POST'
-                });
-            }
-        }
-
-    </script>
+    <script src="/Scripts/_main.js" type="text/javascript"></script>
 
     @if (model.AdminModel.Active)
     {
