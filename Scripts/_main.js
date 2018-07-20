@@ -21,7 +21,7 @@ function onHashChange() {
     if (location.hash.toLowerCase().indexOf("#switch=") > -1) {
         var domain = location.hash.toLowerCase().replace("#switch=", "");
         jQuery_pocket.ajax({
-            url: "/Admin/SwitchPocket",
+            url: "/Admin/Switch",
             data: { domain: domain },
             success: function (data) {
                 if (data.Result) {

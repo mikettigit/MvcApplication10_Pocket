@@ -8,8 +8,21 @@ namespace MvcApplication10.Models
     public class AdminModel
     {
         public bool Active;
-        public string OpeningCommentBracket = "<!--<2fea14ff-d8e3-42c1-a230-3917b7a640c9_adminmode>";
-        public string ClosingCommentBracket = "</2fea14ff-d8e3-42c1-a230-3917b7a640c9_adminmode>-->";
+        public string Id = "2fea14ff-d8e3-42c1-a230-3917b7a640c9";
+        public string OpeningCommentBracket
+        {
+            get
+            {
+                return "<!--<" + Id + ">";
+            }
+        }
+        public string ClosingCommentBracket 
+        {
+            get
+            {
+                return "</" + Id + ">-->";
+            }
+        }
 
         public AdminModel()
         {

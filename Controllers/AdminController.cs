@@ -27,13 +27,11 @@ namespace MvcApplication10.Controllers
         public ActionResult Login(FormCollection collection)
         {
             JsonMessage jm = new JsonMessage();
-            jm.Result = false;
-            jm.Message = "Не найдена модель...";
-            
+            jm.Result = false;          
             jm.Message = "Пароль не соответствует логину...";
             if (collection["password"] == ConfigurationManager.AppSettings["Password"] || collection["password"].GetHashCode().ToString() == ConfigurationManager.AppSettings["PasswordHash"])
             {
-                jm.Message = "Ok";
+                jm.Message = "";
                 jm.Result = true;
                 Pocket.AdminModel.Active = true;
             }
@@ -65,7 +63,7 @@ namespace MvcApplication10.Controllers
 
                 HtmlDocument doc = new HtmlDocument();
                 doc.LoadHtml(Content);
-                var nodes = doc.DocumentNode.SelectNodes("//div[@id='2fea14ff-d8e3-42c1-a230-3917b7a640c9']");
+                var nodes = doc.DocumentNode.SelectNodes("//div[@id='" + Pocket.AdminModel.Id + "']");
                 if (nodes != null)
                 {
                     foreach (var node in nodes)
@@ -100,7 +98,7 @@ namespace MvcApplication10.Controllers
                     HttpPostedFileBase hpf = Request.Files[0] as HttpPostedFileBase;
                     if (hpf.ContentLength > 0)
                     {
-                        string path = "/2fea14ff-d8e3-42c1-a230-3917b7a640c9/" + Guid.NewGuid().ToString() + Path.GetExtension(hpf.FileName);
+                        string path = "/" + Pocket.AdminModel.Id + "/" + Guid.NewGuid().ToString() + Path.GetExtension(hpf.FileName);
                         string ImageFilename = Pocket.GetPocketFilePath(path, false, false);
 
                         string target = collection["target"];
@@ -129,7 +127,29 @@ namespace MvcApplication10.Controllers
             JsonMessage jm = new JsonMessage();
             jm.Message = "Состояние модели сброшено...";
             jm.Result = true;
-            Pocket = null;
+            ResetPocket();
+            return Json(jm);
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult Switch(FormCollection collection)
+        {
+            JsonMessage jm = new JsonMessage();
+            string domain = collection["domain"];
+            string SourceUrl = Request.Url.Scheme + "://" + domain;
+            string ServerDomainName = Request.Url.Authority;
+            if (Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
+            {
+                Pocket = new PocketModel(SourceUrl, ServerDomainName, true);
+                jm.Object = Request.Url.Scheme + "://" + Request.Url.Authority + "/" + domain;
+                jm.Message = "Подключен " + domain;
+                jm.Result = true;
+            }
+            else
+            {
+                jm.Message = "Ошибка подключения \"" + domain + "\"";
+                jm.Result = false;
+            }
             return Json(jm);
         }
     }

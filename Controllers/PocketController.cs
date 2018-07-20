@@ -102,9 +102,30 @@ namespace MvcApplication10.Controllers
 
         [AcceptVerbs(HttpVerbs.Get)]
         //[OutputCache(CacheProfile = "Index Get")]
+        public ActionResult PocketSelect(string domain, string query)
+        {
+            string SourceUrl = Request.Url.Scheme + "://" + domain;
+            string ServerDomainName = Request.Url.Authority;
+            if (SourceUrl != Pocket.SourceUrl)
+            {
+                Pocket = new PocketModel(SourceUrl, ServerDomainName, true);
+            }
+            return Index();
+        }
+        
+        [AcceptVerbs(HttpVerbs.Get)]
+        //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
             string RequestPath = GetClearRequestPath(Request.Url.AbsolutePath, Request.QueryString.ToString());
+            if (Pocket.Switched)
+            {
+                string SourceUrl = "/" + (new Uri(Pocket.SourceUrl).Host);
+                if (RequestPath.StartsWith(SourceUrl))
+                {
+                    RequestPath = RequestPath.Replace(SourceUrl, "");
+                }
+            }
 
             string ContentType = MimeMapping.GetMimeMapping(Request.Path).ToLower();
             if ((ContentType == "application/octet-stream"
@@ -124,14 +145,40 @@ namespace MvcApplication10.Controllers
                 {
                     string content = Pocket.GetContent(RequestPath, false);
 
-                    if (Pocket.AdminModel.Active)
+                    if (Pocket.AdminModel.Active || Pocket.Switched)
                     {
                         HtmlDocument doc = new HtmlDocument();
                         doc.LoadHtml(content);
-                        foreach (var scriptTag in doc.DocumentNode.SelectNodes("//script"))
+                        if (Pocket.AdminModel.Active)
                         {
-                            var commentedScript = HtmlTextNode.CreateNode(Pocket.AdminModel.OpeningCommentBracket + scriptTag.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
-                            scriptTag.ParentNode.ReplaceChild(commentedScript, scriptTag);
+                            var ScriptNodes = doc.DocumentNode.SelectNodes("//script");
+                            if (ScriptNodes != null) {
+                                foreach (var ScriptNode in ScriptNodes)
+                                {
+                                    var commentedScript = HtmlTextNode.CreateNode(Pocket.AdminModel.OpeningCommentBracket + ScriptNode.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
+                                    ScriptNode.ParentNode.ReplaceChild(commentedScript, ScriptNode);
+                                }
+                            }
+                        }
+                        if (Pocket.Switched)
+                        {
+                            string MultiServerDomainName = "//" + Pocket.ServerDomainName + "/" + (new Uri(Pocket.SourceUrl)).Host;
+                            var SrcNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@src,'/')][substring(@src,2,1)!='/']");
+                            if (SrcNodes != null)
+                            {
+                                foreach (var SrcNode in SrcNodes)
+                                {
+                                    SrcNode.Attributes["src"].Value = MultiServerDomainName + SrcNode.Attributes["src"].Value;
+                                }
+                            }
+                            var HrefNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@href,'/')][substring(@href,2,1)!='/']");
+                            if (HrefNodes != null)
+                            {
+                                foreach (var HrefNode in HrefNodes)
+                                {
+                                    HrefNode.Attributes["href"].Value = MultiServerDomainName + HrefNode.Attributes["href"].Value;
+                                }
+                            }
                         }
                         content = doc.DocumentNode.OuterHtml;
                     }
@@ -145,7 +192,14 @@ namespace MvcApplication10.Controllers
                         }
                     }
 
-                    return Content(content);
+                    if (String.IsNullOrWhiteSpace(content))
+                    {
+                        return View("~/Views/Empty.cshtml", Pocket);
+                    }
+                    else
+                    {
+                        return Content(content);
+                    }
                 }
             }
             else if (ContentType == "application/javascript" || ContentType == "text/css")

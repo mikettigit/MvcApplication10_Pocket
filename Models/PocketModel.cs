@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
 using MvcApplication10.Helpers;
+using System.Configuration;
 
 namespace MvcApplication10.Models
 {
@@ -22,6 +23,8 @@ namespace MvcApplication10.Models
 
         private string messagefrom;
         private string messageto;
+
+        private bool switched;
 
         private bool locked;
 
@@ -39,6 +42,14 @@ namespace MvcApplication10.Models
             {
                 return !String.IsNullOrEmpty(allpocketsfolderpath);
             } 
+        }
+
+        public bool Switched
+        {
+            get 
+            {
+                return switched;
+            }
         }
 
         public string MessageFrom
@@ -73,6 +84,14 @@ namespace MvcApplication10.Models
             }
         }
 
+        public string SourceUrl
+        {
+            get
+            {
+                return sourceurl;
+            }
+        }
+
         public string CurrentPocketFolderPath
         {
             get
@@ -104,15 +123,22 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(string _sourceurl, string _allpocketsfolderpath, string _serverdomainname, string _serverfolderpath, string _messagefrom, string _messageto, bool _locked = false)
+        public PocketModel(string _sourceurl, string _serverdomainname, bool _multi, bool _locked = false)
         {
             sourceurl = _sourceurl.TrimEnd('/');
             serverdomainname = _serverdomainname;
-            serverfolderpath = _serverfolderpath;
-            allpocketsfolderpath = _allpocketsfolderpath;
 
-            messagefrom = _messagefrom;
-            messageto = _messageto;
+            serverfolderpath = HttpContext.Current.Server.MapPath("/");
+            string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
+            if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+            {
+                allpocketsfolderpath = serverfolderpath + AllPocketsFolderPath;
+            }
+
+            messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
+            messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
+
+            switched = _multi;
             locked = _locked;
 
             cookiecontainer = new CookieContainer();

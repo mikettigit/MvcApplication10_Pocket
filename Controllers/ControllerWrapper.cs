@@ -30,17 +30,8 @@ namespace MvcApplication10.Controllers
                     string SourceUrl = ConfigurationManager.AppSettings["PocketSource"];
                     if (!String.IsNullOrEmpty(SourceUrl) && Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
                     {
-                        string ServerFolderPath = Server.MapPath("/");
-                        string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-                        if (!String.IsNullOrEmpty(AllPocketsFolderPath))
-                        {
-                            AllPocketsFolderPath = ServerFolderPath + AllPocketsFolderPath;
-                        }
                         string ServerDomainName = Request.Url.Authority;
-                        string messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
-                        string messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
-                        result = new PocketModel(SourceUrl, AllPocketsFolderPath, ServerDomainName, ServerFolderPath, messagefrom, messageto);
-
+                        result = new PocketModel(SourceUrl, ServerDomainName, false);
                         sm.Set("pocketModel", result);
                     }
                 }
@@ -53,7 +44,12 @@ namespace MvcApplication10.Controllers
                 sm.Set("pocketModel", value);
             }
         }
-        
+
+        public void ResetPocket()
+        {
+            Pocket = null;
+        }
+
         private IEnumerable<string> ExceptQueryParams
         {
             get
