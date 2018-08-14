@@ -190,24 +190,36 @@ namespace MvcApplication10.Models
                 xConfiguration.Add(XLocked);
             xConfiguration.Add(xNotifications);
                 XElement xReplacementModel = new XElement("ReplacementModel");
+                xReplacementModel.Add(CreateReplacementNode("//script[contains(.,'yaCounter')]"));
+                xReplacementModel.Add(CreateReplacementNode("//img[contains(@src,'yandex.ru/watch')]"));
+                xReplacementModel.Add(CreateReplacementNode("//script[contains(.,'google-analytics.com/analytics.js')]"));
                 for (int i = 0; i < 3; i++) { 
-                    XElement xReplacement = new XElement("Replacement");
-                        XAttribute xTarget = new XAttribute("target", "");
-                        xReplacement.Add(xTarget);
-                        XElement xWhat = new XElement("what");
-                            XAttribute xxPath = new XAttribute("xpath", "");
-                            xWhat.Add(xxPath);
-                            xWhat.Add(new XCData(""));
-                        xReplacement.Add(xWhat);
-                        XElement xBy = new XElement("by");
-                            xBy.Add(new XCData(""));
-                        xReplacement.Add(xBy);
-                    xReplacementModel.Add(xReplacement);
+                    xReplacementModel.Add(CreateReplacementNode());
                 }
             xConfiguration.Add(xReplacementModel);
             xConfiguration.Save(_configfilepath);
 
             return xConfiguration;
+        }
+
+        private XElement CreateReplacementNode(string xpath = "")
+        {
+            XElement result = new XElement("Replacement");
+                
+                XAttribute xTarget = new XAttribute("target", "");
+                result.Add(xTarget);
+
+                XElement xWhat = new XElement("what");
+                    XAttribute xxPath = new XAttribute("xpath", xpath);
+                    xWhat.Add(xxPath);
+                    xWhat.Add(new XCData(""));
+                result.Add(xWhat);
+
+                XElement xBy = new XElement("by");
+                    xBy.Add(new XCData(""));
+                result.Add(xBy);
+
+            return result;
         }
 
         private HttpWebResponse GetResponse(Uri uri)
