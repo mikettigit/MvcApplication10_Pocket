@@ -193,6 +193,7 @@ namespace MvcApplication10.Models
                 xReplacementModel.Add(CreateReplacementNode("//script[contains(.,'yaCounter')]"));
                 xReplacementModel.Add(CreateReplacementNode("//img[contains(@src,'yandex.ru/watch')]"));
                 xReplacementModel.Add(CreateReplacementNode("//script[contains(.,'google-analytics.com/analytics.js')]"));
+                xReplacementModel.Add(CreateReplacementNode("//script[contains(.,'Drupal.settings')]"));
                 for (int i = 0; i < 3; i++) { 
                     xReplacementModel.Add(CreateReplacementNode());
                 }

@@ -155,7 +155,7 @@ namespace MvcApplication10.Controllers
                             if (ScriptNodes != null) {
                                 foreach (var ScriptNode in ScriptNodes)
                                 {
-                                    var commentedScript = HtmlTextNode.CreateNode(Pocket.AdminModel.OpeningCommentBracket + ScriptNode.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
+                                    var commentedScript = doc.CreateTextNode(Pocket.AdminModel.OpeningCommentBracket + ScriptNode.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
                                     ScriptNode.ParentNode.ReplaceChild(commentedScript, ScriptNode);
                                 }
                             }

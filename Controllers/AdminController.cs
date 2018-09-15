@@ -72,7 +72,7 @@ namespace MvcApplication10.Controllers
                     }
                 }
                 Content = doc.DocumentNode.OuterHtml;
-
+                
                 Content = Content.Replace(Pocket.AdminModel.OpeningCommentBracket, "").Replace(Pocket.AdminModel.ClosingCommentBracket, "");
 
                 System.IO.File.WriteAllText(SampleFilepath, Content);
