@@ -117,6 +117,11 @@ namespace MvcApplication10.Controllers
         //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
+            if (Pocket == null)
+            {
+                return Content(String.Format("Invalid source"));
+            }
+
             string RequestPath = GetClearRequestPath(Request.Url.AbsolutePath, Request.QueryString.ToString());
             if (Pocket.Switched)
             {
@@ -137,70 +142,65 @@ namespace MvcApplication10.Controllers
                         || Request.AcceptTypes.Any(r => r.ToLower() == "application/xhtml+xml")
                         || Request.AcceptTypes.Any(r => r.ToLower() == "application/xml")))
             {
-                if (Pocket == null)
+                
+                string content = Pocket.GetContent(RequestPath, false);
+
+                if (Pocket.AdminModel.Active || Pocket.Switched)
                 {
-                    return Content(String.Format("Invalid pocket"));
+                    HtmlDocument doc = new HtmlDocument();
+                    doc.LoadHtml(content);
+                    if (Pocket.AdminModel.Active)
+                    {
+                        var ScriptNodes = doc.DocumentNode.SelectNodes("//script");
+                        if (ScriptNodes != null) {
+                            foreach (var ScriptNode in ScriptNodes)
+                            {
+                                var commentedScript = doc.CreateTextNode(Pocket.AdminModel.OpeningCommentBracket + ScriptNode.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
+                                ScriptNode.ParentNode.ReplaceChild(commentedScript, ScriptNode);
+                            }
+                        }
+                    }
+                    if (Pocket.Switched)
+                    {
+                        string MultiServerDomainName = "//" + Pocket.ServerDomainName + "/" + (new Uri(Pocket.SourceUrl)).Host;
+                        var SrcNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@src,'/')][substring(@src,2,1)!='/']");
+                        if (SrcNodes != null)
+                        {
+                            foreach (var SrcNode in SrcNodes)
+                            {
+                                SrcNode.Attributes["src"].Value = MultiServerDomainName + SrcNode.Attributes["src"].Value;
+                            }
+                        }
+                        var HrefNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@href,'/')][substring(@href,2,1)!='/']");
+                        if (HrefNodes != null)
+                        {
+                            foreach (var HrefNode in HrefNodes)
+                            {
+                                HrefNode.Attributes["href"].Value = MultiServerDomainName + HrefNode.Attributes["href"].Value;
+                            }
+                        }
+                    }
+                    content = doc.DocumentNode.OuterHtml;
+                }
+
+                foreach (var ControlName in SharedControls)
+                {
+                    if (content.Contains("@" + ControlName.Key))
+                    {
+                        string template = RenderRazorViewToString(ControlName.Value, Pocket);
+                        content = content.Replace("@" + ControlName.Key, template);
+                    }
+                }
+
+                if (String.IsNullOrWhiteSpace(content))
+                {
+                    return View("~/Views/Empty.cshtml", Pocket);
                 }
                 else
                 {
-                    string content = Pocket.GetContent(RequestPath, false);
-
-                    if (Pocket.AdminModel.Active || Pocket.Switched)
-                    {
-                        HtmlDocument doc = new HtmlDocument();
-                        doc.LoadHtml(content);
-                        if (Pocket.AdminModel.Active)
-                        {
-                            var ScriptNodes = doc.DocumentNode.SelectNodes("//script");
-                            if (ScriptNodes != null) {
-                                foreach (var ScriptNode in ScriptNodes)
-                                {
-                                    var commentedScript = doc.CreateTextNode(Pocket.AdminModel.OpeningCommentBracket + ScriptNode.OuterHtml + Pocket.AdminModel.ClosingCommentBracket);
-                                    ScriptNode.ParentNode.ReplaceChild(commentedScript, ScriptNode);
-                                }
-                            }
-                        }
-                        if (Pocket.Switched)
-                        {
-                            string MultiServerDomainName = "//" + Pocket.ServerDomainName + "/" + (new Uri(Pocket.SourceUrl)).Host;
-                            var SrcNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@src,'/')][substring(@src,2,1)!='/']");
-                            if (SrcNodes != null)
-                            {
-                                foreach (var SrcNode in SrcNodes)
-                                {
-                                    SrcNode.Attributes["src"].Value = MultiServerDomainName + SrcNode.Attributes["src"].Value;
-                                }
-                            }
-                            var HrefNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@href,'/')][substring(@href,2,1)!='/']");
-                            if (HrefNodes != null)
-                            {
-                                foreach (var HrefNode in HrefNodes)
-                                {
-                                    HrefNode.Attributes["href"].Value = MultiServerDomainName + HrefNode.Attributes["href"].Value;
-                                }
-                            }
-                        }
-                        content = doc.DocumentNode.OuterHtml;
-                    }
-
-                    foreach (var ControlName in SharedControls)
-                    {
-                        if (content.Contains("@" + ControlName.Key))
-                        {
-                            string template = RenderRazorViewToString(ControlName.Value, Pocket);
-                            content = content.Replace("@" + ControlName.Key, template);
-                        }
-                    }
-
-                    if (String.IsNullOrWhiteSpace(content))
-                    {
-                        return View("~/Views/Empty.cshtml", Pocket);
-                    }
-                    else
-                    {
-                        return Content(content);
-                    }
+                    return Content(content);
                 }
+                
             }
             else if (ContentType == "application/javascript" || ContentType == "text/css")
             {
