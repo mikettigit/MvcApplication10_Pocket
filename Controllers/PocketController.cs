@@ -119,7 +119,7 @@ namespace MvcApplication10.Controllers
         {
             if (Pocket == null)
             {
-                return Content(String.Format("Invalid source"));
+                return Content(String.Format("Invalid pocket"));
             }
 
             string RequestPath = GetClearRequestPath(Request.Url.AbsolutePath, Request.QueryString.ToString());
