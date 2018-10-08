@@ -20,7 +20,6 @@ namespace MvcApplication10.Models
         private string allpocketsfolderpath;
 
         private string sourceurl;
-        private string sourceurlalias;
 
         private string messagefrom;
         private string messageto;
@@ -93,25 +92,12 @@ namespace MvcApplication10.Models
             }
         }
 
-        public string SourceUrlAlias
-        {
-            get
-            {
-                return sourceurlalias;
-            }
-        }
-
         public string CurrentPocketFolderPath
         {
             get
             {
-                string FolderName = SourceUrlAlias;
-                if (String.IsNullOrWhiteSpace(FolderName))
-                {
-                    Uri uri = new Uri(SourceUrl);
-                    FolderName = uri.Host;
-                }
-                return AllPocketsFolderPath + FolderName + "\\";
+                Uri uri = new Uri(sourceurl);
+                return AllPocketsFolderPath + uri.Host + "\\";
             }
         }
 
@@ -119,28 +105,16 @@ namespace MvcApplication10.Models
         {
             get
             {
-                Uri uri = new Uri(SourceUrl);
+                Uri uri = new Uri(sourceurl);
                 return CurrentPocketFolderPath + uri.Host + ".config";
             }
-        }
-
-        private string ConfigFileName(string aliasname)
-        {
-            string result = "";
-            var SearchPattern = new System.Text.RegularExpressions.Regex(@"$(?<=\.(config))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            Uri uri = new Uri(aliasname);//запретитьь делать IP
-            var names = Directory.GetFiles(AllPocketsFolderPath + uri.Host).Where(f => SearchPattern.IsMatch(f)).OrderBy(f => f).ToList();
-            if (names.Count() > 0) {
-                result = Path.GetFileNameWithoutExtension(names[0]);
-            }
-            return result;
         }
 
         private string LogFilePath
         {
             get
             {
-                Uri uri = new Uri(SourceUrl);
+                Uri uri = new Uri(sourceurl);
                 return CurrentPocketFolderPath + uri.Host + ".log";
             }
         }
@@ -149,27 +123,17 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(string _sourceurl, string _sourceurlalias, string _serverdomainname, bool _switched, bool _locked = false)
+        public PocketModel(string _sourceurl, string _serverdomainname, bool _switched, bool _locked = false)
         {
+            sourceurl = _sourceurl.TrimEnd('/');
+            serverdomainname = _serverdomainname;
+
             serverfolderpath = HttpContext.Current.Server.MapPath("/");
             string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
             if (!String.IsNullOrEmpty(AllPocketsFolderPath))
             {
                 allpocketsfolderpath = serverfolderpath + AllPocketsFolderPath;
             }
-
-            if (_switched && String.IsNullOrWhiteSpace(_sourceurlalias))
-            {
-                sourceurl = _sourceurl;
-                sourceurlalias = ConfigFileName(_sourceurl);
-            }
-            else
-            {
-                sourceurl = _sourceurl.TrimEnd('/');
-                sourceurlalias = _sourceurlalias;
-            }
-            
-            serverdomainname = _serverdomainname;
 
             messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
             messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];

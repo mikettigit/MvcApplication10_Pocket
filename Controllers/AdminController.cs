@@ -140,8 +140,8 @@ namespace MvcApplication10.Controllers
             string ServerDomainName = Request.Url.Authority;
             if (Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
             {
-                Pocket = new PocketModel(SourceUrl, DateTime.Now.GetHashCode().ToString(), ServerDomainName, true);
-                jm.Object = Request.Url.Scheme + "://" + Request.Url.Authority + "/" + Pocket.SourceUrlAlias;
+                Pocket = new PocketModel(SourceUrl, ServerDomainName, true);
+                jm.Object = Request.Url.Scheme + "://" + Request.Url.Authority + "/" + domain;
                 jm.Message = "Подключен " + domain;
                 jm.Result = true;
             }

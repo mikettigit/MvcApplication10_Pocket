@@ -108,7 +108,7 @@ namespace MvcApplication10.Controllers
             string ServerDomainName = Request.Url.Authority;
             if (SourceUrl != Pocket.SourceUrl)
             {
-                Pocket = new PocketModel(SourceUrl, "", ServerDomainName, true);
+                Pocket = new PocketModel(SourceUrl, ServerDomainName, true);
             }
             return Index();
         }
@@ -117,7 +117,6 @@ namespace MvcApplication10.Controllers
         //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
-            
             if (Pocket == null)
             {
                 return Content(String.Format("Invalid pocket"));
