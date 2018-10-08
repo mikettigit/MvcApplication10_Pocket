@@ -123,7 +123,7 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(string _sourceurl, string _serverdomainname, bool _multi, bool _locked = false)
+        public PocketModel(string _sourceurl, string _serverdomainname, bool _switched, bool _locked = false)
         {
             sourceurl = _sourceurl.TrimEnd('/');
             serverdomainname = _serverdomainname;
@@ -138,7 +138,7 @@ namespace MvcApplication10.Models
             messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
             messageto = ConfigurationManager.AppSettings["DefaultMessageTo"];
 
-            switched = _multi;
+            switched = _switched;
             locked = _locked;
 
             cookiecontainer = new CookieContainer();
