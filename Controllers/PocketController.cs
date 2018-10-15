@@ -99,24 +99,30 @@ namespace MvcApplication10.Controllers
             return result;
 
         }
-
-        [AcceptVerbs(HttpVerbs.Get)]
-        //[OutputCache(CacheProfile = "Index Get")]
-        public ActionResult PocketSelect(string domain, string query)
-        {
-            string SourceUrl = Request.Url.Scheme + "://" + domain;
-            string ServerDomainName = Request.Url.Authority;
-            if (SourceUrl != Pocket.SourceUrl)
-            {
-                Pocket = new PocketModel(SourceUrl, ServerDomainName, true);
-            }
-            return Index();
-        }
         
         [AcceptVerbs(HttpVerbs.Get)]
         //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
+            if (Request.Url.AbsolutePath.Length > 1)
+            {
+                var directories = Directory.GetDirectories(Pocket.AllPocketsFolderPath);
+                foreach (string directory in directories)
+                {
+                    string DomainNаme = Path.GetFileName(directory);
+                    if (Request.Url.AbsolutePath.StartsWith("/" + DomainNаme))
+                    {
+                        string SourceUrl = Request.Url.Scheme + "://" + Pocket.ConfigFileName(DomainNаme);
+                        string ServerDomainName = Request.Url.Authority;
+                        if (Pocket == null || SourceUrl != Pocket.SourceUrl)
+                        {
+                            Pocket = new PocketModel(SourceUrl, DomainNаme, ServerDomainName, true);
+                        }
+                        break;
+                    }
+                }
+            }
+
             if (Pocket == null)
             {
                 return Content(String.Format("Invalid pocket"));
@@ -129,6 +135,11 @@ namespace MvcApplication10.Controllers
                 if (RequestPath.StartsWith(SourceUrl))
                 {
                     RequestPath = RequestPath.Replace(SourceUrl, "");
+                }
+                string SourceUrlAlias = "/" + Pocket.SourceUrlAlias;
+                if (RequestPath.StartsWith(SourceUrlAlias))
+                {
+                    RequestPath = RequestPath.Replace(SourceUrlAlias, "");
                 }
             }
 
@@ -162,7 +173,7 @@ namespace MvcApplication10.Controllers
                     }
                     if (Pocket.Switched)
                     {
-                        string MultiServerDomainName = "//" + Pocket.ServerDomainName + "/" + (new Uri(Pocket.SourceUrl)).Host;
+                        string MultiServerDomainName = "//" + Pocket.ServerDomainName + "/" + Pocket.SourceUrlAlias;
                         var SrcNodes = doc.DocumentNode.SelectNodes("//*[starts-with(@src,'/')][substring(@src,2,1)!='/']");
                         if (SrcNodes != null)
                         {

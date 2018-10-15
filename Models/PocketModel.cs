@@ -20,6 +20,7 @@ namespace MvcApplication10.Models
         private string allpocketsfolderpath;
 
         private string sourceurl;
+        private string sourceurlalias;
 
         private string messagefrom;
         private string messageto;
@@ -76,7 +77,7 @@ namespace MvcApplication10.Models
             }
         }
 
-        private string AllPocketsFolderPath
+        public string AllPocketsFolderPath
         {
             get
             {
@@ -92,15 +93,40 @@ namespace MvcApplication10.Models
             }
         }
 
+        public string SourceUrlAlias
+        {
+            get
+            {
+                return sourceurlalias;
+            }
+        }
+
         public string CurrentPocketFolderPath
         {
             get
             {
-                Uri uri = new Uri(sourceurl);
-                return AllPocketsFolderPath + uri.Host + "\\";
+                Uri uri = new Uri(SourceUrl);
+                string FolderName = uri.Host;
+                if (!SourceUrl.Contains(SourceUrlAlias))
+                {
+                    FolderName = SourceUrlAlias;
+                }
+                return AllPocketsFolderPath + FolderName + "\\";
             }
         }
 
+        public string ConfigFileName(string aliasname)
+        {
+            string result = "";
+            var SearchPattern = new System.Text.RegularExpressions.Regex(@"$(?<=\.(config))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var names = Directory.GetFiles(AllPocketsFolderPath + aliasname).Where(f => SearchPattern.IsMatch(f)).OrderBy(f => f).ToList();
+            if (names.Count() > 0)
+            {
+                result = Path.GetFileNameWithoutExtension(names[0]);
+            }
+            return result;
+        }
+        
         public string ConfigFilePath
         {
             get
@@ -123,9 +149,10 @@ namespace MvcApplication10.Models
         public ReplacementModel ReplacementModel;
         private EnhanceModel EnhanceModel;
 
-        public PocketModel(string _sourceurl, string _serverdomainname, bool _switched, bool _locked = false)
+        public PocketModel(string _sourceurl, string _sourceurlalias, string _serverdomainname, bool _switched, bool _locked = false)
         {
             sourceurl = _sourceurl.TrimEnd('/');
+            sourceurlalias = _sourceurlalias;
             serverdomainname = _serverdomainname;
 
             serverfolderpath = HttpContext.Current.Server.MapPath("/");

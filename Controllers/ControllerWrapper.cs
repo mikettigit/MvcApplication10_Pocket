@@ -31,7 +31,7 @@ namespace MvcApplication10.Controllers
                     if (!String.IsNullOrEmpty(SourceUrl) && Uri.IsWellFormedUriString(SourceUrl, UriKind.Absolute))
                     {
                         string ServerDomainName = Request.Url.Authority;
-                        result = new PocketModel(SourceUrl, ServerDomainName, false);
+                        result = new PocketModel(SourceUrl, SourceUrl, ServerDomainName, false);
                         sm.Set("pocketModel", result);
                     }
                 }
