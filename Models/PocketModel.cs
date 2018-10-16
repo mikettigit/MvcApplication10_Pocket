@@ -9,6 +9,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MvcApplication10.Helpers;
 using System.Configuration;
+using System.Threading.Tasks;
 
 namespace MvcApplication10.Models
 {
@@ -156,10 +157,10 @@ namespace MvcApplication10.Models
             serverdomainname = _serverdomainname;
 
             serverfolderpath = HttpContext.Current.Server.MapPath("/");
-            string AllPocketsFolderPath = ConfigurationManager.AppSettings["PocketPath"];
-            if (!String.IsNullOrEmpty(AllPocketsFolderPath))
+            string _allpocketsfolderpath = ConfigurationManager.AppSettings["PocketPath"];
+            if (!String.IsNullOrEmpty(_allpocketsfolderpath))
             {
-                allpocketsfolderpath = serverfolderpath + AllPocketsFolderPath;
+                allpocketsfolderpath = serverfolderpath + _allpocketsfolderpath;
             }
 
             messagefrom = ConfigurationManager.AppSettings["DefaultMessageFrom"];
@@ -168,6 +169,27 @@ namespace MvcApplication10.Models
             switched = _switched;
             locked = _locked;
 
+            Task.Factory.StartNew(() =>
+            {
+                string _switchedpocketstimelive = ConfigurationManager.AppSettings["SwitchedPocketsTimelive"];
+                if (_switchedpocketstimelive != null) {
+                    int switchedpocketstimelive = Convert.ToInt32(_switchedpocketstimelive);
+                    string PocketSourceFromWebconfig = (new Uri(ConfigurationManager.AppSettings["PocketSource"])).Host.ToLower();
+                    var directories = Directory.GetDirectories(AllPocketsFolderPath);
+                    foreach (string directory in directories)
+                    {
+                        if (PocketSourceFromWebconfig != Path.GetFileName(directory).ToLower())
+                        {
+                            DirectoryInfo di = new DirectoryInfo(directory);
+                            if ((DateTime.Now - di.LastWriteTime).TotalMilliseconds > switchedpocketstimelive)
+                            {
+                                Directory.Delete(directory, true);
+                            }
+                        }
+                    }
+                }
+            });
+            
             cookiecontainer = new CookieContainer();
 
             XElement xConfiguration = null;

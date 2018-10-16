@@ -104,6 +104,11 @@ namespace MvcApplication10.Controllers
         //[OutputCache(CacheProfile = "Index Get")]
         public ActionResult Index()
         {
+            if (Pocket == null)
+            {
+                return Content(String.Format("Invalid pocket"));
+            }
+
             if (Request.Url.AbsolutePath.Length > 1)
             {
                 var directories = Directory.GetDirectories(Pocket.AllPocketsFolderPath);
@@ -121,11 +126,6 @@ namespace MvcApplication10.Controllers
                         break;
                     }
                 }
-            }
-
-            if (Pocket == null)
-            {
-                return Content(String.Format("Invalid pocket"));
             }
 
             string RequestPath = GetClearRequestPath(Request.Url.AbsolutePath, Request.QueryString.ToString());

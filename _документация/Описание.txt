@@ -1,5 +1,6 @@
 ﻿Web.config
 	1) PocketPath пустой => файлы сайта-образца не кэшируются (режим прокси)
+	2) SwitchedPocketsTimelive время существования покетов в мс (если не задано, то не удаляются)
 
 url.config
 	1) <MessageFrom></MessageFrom>
