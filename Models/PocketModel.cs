@@ -318,7 +318,7 @@ namespace MvcApplication10.Models
             result = CurrentPocketFolderPath + HttpUtility.UrlDecode(uri.PathAndQuery);
             if (isContent)
             {
-                result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + uri.Host + ".htm";
+                result = result + (uri.PathAndQuery.EndsWith("/") ? "" : "/") + "index.htm";
             }
             else {
                 result = result.Trim('/');
