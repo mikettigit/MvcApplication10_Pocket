@@ -140,6 +140,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\jquery_pocket.js" />
+    <Content Include="Scripts\_custom.js" />
     <Content Include="Scripts\_main.js" />
     <Content Include="Scripts\_admin.js" />
     <Content Include="Scripts\_post.js" />
